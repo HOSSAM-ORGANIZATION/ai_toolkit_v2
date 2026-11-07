@@ -461,8 +461,82 @@ custom_tokens:
             f.write(profile_yaml)
         print(f"\n🎉 Successfully created {out_file}!")
         print("💡 The project identity is now locked. Workflows will adhere to this specification.")
+        
+        # Scaffold ai_docs, ai_specs, and ai_worklog
+        generate_project_scaffolding(target_dir, profile_data, toolkit_dir)
     else:
         print("\n❌ Cancelled. No changes saved.")
+
+def generate_project_scaffolding(target_dir, profile, toolkit_dir):
+    """Generates ai_docs, ai_specs, and ai_worklog directories tailored to the project profile."""
+    ai_docs = target_dir / "ai_docs"
+    ai_specs = target_dir / "ai_specs"
+    ai_worklog = target_dir / "ai_worklog"
+    
+    ai_docs.mkdir(parents=True, exist_ok=True)
+    (ai_specs / "features").mkdir(parents=True, exist_ok=True)
+    (ai_specs / "design").mkdir(parents=True, exist_ok=True)
+    (ai_specs / "api" / "contracts").mkdir(parents=True, exist_ok=True)
+    (ai_worklog / "daily").mkdir(parents=True, exist_ok=True)
+
+    templates_dir = Path(toolkit_dir) / "templates" / "app-seed" / "ai_docs"
+
+    # Replacements map
+    replacements = {
+        "{{PROJECT_NAME}}": str(profile.get("project_name", "")),
+        "{{PROJECT_TYPE}}": str(profile.get("project_type", "")),
+        "{{FLAVORS_LIST}}": ", ".join(profile.get("flavors", [])) or "None (Single App)",
+        "{{ARCHITECTURE}}": str(profile.get("architecture", "")),
+        "{{STATE_MANAGEMENT}}": str(profile.get("state_management", "")),
+        "{{NETWORK_CLIENT}}": str(profile.get("network_client", "")),
+        "{{DEPENDENCY_INJECTION}}": str(profile.get("dependency_injection", "")),
+        "{{NAVIGATION}}": str(profile.get("navigation", "")),
+        "{{L10N_ENGINE}}": str(profile.get("localization", {}).get("engine", "")),
+        "{{DEFAULT_LOCALE}}": str(profile.get("localization", {}).get("default_locale", "")),
+        "{{DIRECTIONALITY}}": str(profile.get("directionality", "")),
+        "{{DESIGN_SOURCE}}": str(profile.get("design_system", {}).get("source", "")),
+        "{{TOKENS_PATH}}": str(profile.get("design_system", {}).get("tokens_path", "")),
+        "{{TESTING_GATE}}": str(profile.get("testing_gate", "")),
+        "{{TOKEN_BUTTON_NAME}}": "AppButton",
+        "{{TOKEN_BUTTON_PATH}}": str(profile.get("custom_tokens", {}).get("button", "lib/common/widgets/app_button.dart")),
+        "{{TOKEN_BACK_BUTTON_NAME}}": "AppBackButton",
+        "{{TOKEN_BACK_BUTTON_PATH}}": str(profile.get("custom_tokens", {}).get("back_button", "lib/common/widgets/app_back_button.dart")),
+        "{{TOKEN_IMAGE_NAME}}": "AppImage",
+        "{{TOKEN_IMAGE_PATH}}": str(profile.get("custom_tokens", {}).get("image", "lib/common/widgets/app_image.dart")),
+        "{{TOKEN_SVG_NAME}}": "AppSvgIcon",
+        "{{TOKEN_SVG_PATH}}": str(profile.get("custom_tokens", {}).get("svg_icon", "lib/common/widgets/svg_icon.dart")),
+        "{{TOKEN_TEXT_FIELD_NAME}}": "AppTextFormField",
+        "{{TOKEN_TEXT_FIELD_PATH}}": str(profile.get("custom_tokens", {}).get("text_field", "lib/common/widgets/app_text_field.dart")),
+        "{{TOKEN_LOADING_NAME}}": "AppLoadingWidget",
+        "{{TOKEN_LOADING_PATH}}": str(profile.get("custom_tokens", {}).get("loading_widget", "lib/common/widgets/loading_widget.dart")),
+    }
+
+    # Generate ai_docs/
+    for doc in ["conventions", "architecture", "memory"]:
+        tmpl = templates_dir / f"{doc}.template.md"
+        out_doc = ai_docs / f"{doc}.md"
+        if tmpl.exists() and not out_doc.exists():
+            with open(tmpl, "r", encoding="utf-8") as f:
+                content = f.read()
+            for k, v in replacements.items():
+                content = content.replace(k, v)
+            with open(out_doc, "w", encoding="utf-8") as f:
+                f.write(content)
+            print(f"   ✅ Scaffolded ai_docs/{doc}.md")
+
+    # Generate ai_specs/INDEX.md
+    specs_index = ai_specs / "INDEX.md"
+    if not specs_index.exists():
+        with open(specs_index, "w", encoding="utf-8") as f:
+            f.write(f"# Feature Specifications Index — {profile.get('project_name')}\n\n## Active Features\n| Feature | Status | Plan | Spec |\n| :--- | :---: | :---: | :---: |\n")
+        print("   ✅ Scaffolded ai_specs/INDEX.md")
+
+    # Generate ai_worklog/TODOS.md
+    todos_file = ai_worklog / "TODOS.md"
+    if not todos_file.exists():
+        with open(todos_file, "w", encoding="utf-8") as f:
+            f.write(f"# Project Backlog & Open TODOs — {profile.get('project_name')}\n\n## High Priority\n- [ ] Initialize core modules and design tokens\n")
+        print("   ✅ Scaffolded ai_worklog/TODOS.md")
 
 if __name__ == "__main__":
     run_wizard()
