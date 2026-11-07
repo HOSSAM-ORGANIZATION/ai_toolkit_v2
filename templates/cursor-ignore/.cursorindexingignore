@@ -1,0 +1,5 @@
+# Cursor indexing ignore: skips raw binary payloads and massive JSON snapshots
+ai_specs/api/source/*.json
+ai_specs/brd/source/*.pdf
+ai_specs/design/source/*.png
+*.postman_collection.json

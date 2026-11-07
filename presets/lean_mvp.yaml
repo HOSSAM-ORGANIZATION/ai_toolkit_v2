@@ -1,0 +1,35 @@
+# Preset: Lean MVP / Fast Prototyping
+# Best for: Quick MVPs, single-developer projects, hackathons
+
+project_name: "mvp_app"
+project_type: "single_app"
+flavors: []
+architecture: "layer_first"
+state_management: "provider"
+network_client: "http"
+dependency_injection: "none_manual"
+navigation: "navigator_2"
+localization:
+  engine: "easy_localization_json"
+  default_locale: "en"
+  supported_locales:
+    - "en"
+directionality: "ltr_first"
+design_system:
+  tokens_path: "lib/theme"
+  source: "manual"
+  strict_mode: false
+testing_gate: "mvp_disabled"
+secrets_management:
+  enabled: false
+  strategy: "none"
+living_documentation:
+  living_readme: true
+  feature_readmes: false
+custom_tokens:
+  button: "lib/common/widgets/custom_button.dart"
+  back_button: "lib/common/widgets/back_icon.dart"
+  image: "lib/common/widgets/network_image_loader.dart"
+  svg_icon: "lib/common/widgets/svg_icon.dart"
+  text_field: "lib/common/widgets/custom_text_field.dart"
+  loading_widget: "lib/common/widgets/loading_spinner.dart"

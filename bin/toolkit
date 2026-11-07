@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# Universal AI Toolkit v2 — Master CLI Dispatcher
+# Zero external dependencies. Works on macOS, Linux, Git Bash, WSL.
+
+set -e
+
+TOOLKIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+usage() {
+  cat << EOF
+Universal AI Toolkit v2 (Master CLI)
+
+Usage:
+  toolkit <command> [options]
+
+Core Commands:
+  init [--prd PATH] [--preset NAME]   Run interactive project profile wizard
+  check [PATH]                         Validate project_profile.yaml integrity
+  plan-split <PATH | --all>            Rotate completed phases from plan.md to history.md
+  context <FEATURE> [PHASE]            Calculate resolved token load budget
+  l10n <SUBCOMMAND>                    Sync and update ARB / JSON / Slang translations
+  verify                               Verify integrity of toolkit rules, links, and templates
+
+Submodule Management:
+  sync                                 Checkout pinned submodule commit
+  pull                                 Pull latest toolkit updates & re-sync IDE rules
+  push "MESSAGE"                       Commit and push toolkit modifications
+  status                               Show submodule Git status
+  help                                 Show this message
+
+EOF
+}
+
+cmd="$1"
+shift || true
+
+case "$cmd" in
+  init)
+    python3 "$TOOLKIT_DIR/bin/wizard/init_profile.py" "$@"
+    ;;
+  check)
+    python3 "$TOOLKIT_DIR/bin/check-profile" "$@"
+    ;;
+  plan-split)
+    python3 "$TOOLKIT_DIR/bin/plan-splitter" "$@"
+    ;;
+  context)
+    python3 "$TOOLKIT_DIR/bin/toolkit-context.py" "$@"
+    ;;
+  l10n)
+    python3 "$TOOLKIT_DIR/bin/l10n-sync.py" "$@"
+    ;;
+  verify)
+    bash "$TOOLKIT_DIR/setup/verify-setup.sh" "$@"
+    ;;
+  sync)
+    echo "🔄 Syncing pinned toolkit commit..."
+    git submodule update --init --recursive
+    echo "✅ Pinned submodule synchronized."
+    ;;
+  pull)
+    echo "⬇️ Pulling latest toolkit changes from origin/main..."
+    git pull origin main
+    echo "⚙️ Synchronizing updated IDE skills and rules..."
+    bash "$TOOLKIT_DIR/setup/install.sh"
+    echo "✅ Toolkit updated and IDE rules synchronized successfully!"
+    ;;
+  push)
+    msg="$1"
+    if [ -z "$msg" ]; then
+      echo "❌ Error: Commit message required. Usage: toolkit push \"your message\"" >&2
+      exit 1
+    fi
+    git add -A
+    git commit -m "$msg"
+    git push origin main
+    echo "✅ Toolkit changes pushed to origin/main."
+    ;;
+  status)
+    git status
+    ;;
+  help|--help|-h|"")
+    usage
+    ;;
+  *)
+    echo "❌ Unknown command: $cmd" >&2
+    usage
+    exit 1
+    ;;
+esac

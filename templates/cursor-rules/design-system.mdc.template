@@ -1,0 +1,12 @@
+---
+description: Enforce zero-hardcoding and strict design system token consumption in Flutter UI
+globs: lib/**/*.dart
+---
+
+# Design System Token Enforcement
+
+- NEVER hardcode hex colors: `Color(0xFF...)` is prohibited. Use `AppColors.<token>` or `Theme.of(context).colorScheme`.
+- NEVER use arbitrary font sizes: `fontSize: 16` is prohibited. Use `TextStyles.<token>` or `Theme.of(context).textTheme`.
+- NEVER use magic padding/margin numbers: `EdgeInsets.all(12)` is prohibited. Use `Dimensions.p<token>`.
+- Use designated shared UI wrappers (`AppButton`, `AppImage`, `AppBackButton`) documented in `ai_docs/conventions.md`.
+- Ensure all directional padding uses `Directional` APIs (`EdgeInsetsDirectional`, `AlignmentDirectional`).

@@ -1,0 +1,9 @@
+# Cursor file ignore: skips generated files, build outputs, and caches
+build/
+.dart_tool/
+ios/Pods/
+android/.gradle/
+*.g.dart
+*.freezed.dart
+*.config.dart
+*.gen.dart

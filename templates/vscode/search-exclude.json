@@ -1,0 +1,12 @@
+{
+  "search.exclude": {
+    "**/ai_specs": true,
+    "**/ai_docs": true,
+    "**/ai_worklog/daily": true,
+    "**/ai_toolkit/docs": true,
+    "**/ai_toolkit/templates": true,
+    "**/ai_toolkit/reference": true,
+    "**/*.g.dart": true,
+    "**/*.freezed.dart": true
+  }
+}

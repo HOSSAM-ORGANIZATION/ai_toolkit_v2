@@ -1,0 +1,14 @@
+---
+description: Enforce Clean Code, SOLID, Modern Dart 3+, and memory management
+globs: lib/**/*.dart
+---
+
+# Clean Code & Presentation Architecture
+
+- **Single Responsibility (SRP):** Decompose widgets exceeding 200 lines into focused sub-widgets.
+- **Modern Dart 3+:**
+  - Use `sealed class` for all Presentation UI States and Events to mandate exhaustive pattern matching.
+  - Use `Records` for transient data pairs and multiple return values.
+- **Memory Management:** Mandatory disposal of `AnimationController`, `ScrollController`, `TextEditingController`, and `StreamSubscription` in `State.dispose()`.
+- **Performance:** Wrap heavy animated subtrees in `RepaintBoundary`. Never allocate `Paint()` inside `paint()`.
+- **Simplicity First:** Always choose the simplest working solution first. Explain the rationale for major architectural choices.

@@ -1,0 +1,36 @@
+# Preset: Modern Modular Architecture with Riverpod
+# Best for: Modern reactive apps, scalable feature packages, type-safe navigation
+
+project_name: "modern_app"
+project_type: "single_app"
+flavors: []
+architecture: "modular"
+state_management: "riverpod"
+network_client: "retrofit"
+dependency_injection: "riverpod"
+navigation: "go_router"
+localization:
+  engine: "slang"
+  default_locale: "en"
+  supported_locales:
+    - "en"
+    - "ar"
+directionality: "ltr_first"
+design_system:
+  tokens_path: "lib/theme/tokens"
+  source: "google_stitch_folder"
+  strict_mode: true
+testing_gate: "recommended"
+secrets_management:
+  enabled: true
+  strategy: "env_file"
+living_documentation:
+  living_readme: true
+  feature_readmes: true
+custom_tokens:
+  button: "lib/shared/widgets/app_button.dart"
+  back_button: "lib/shared/widgets/app_back_button.dart"
+  image: "lib/shared/widgets/app_image.dart"
+  svg_icon: "lib/shared/widgets/app_svg_icon.dart"
+  text_field: "lib/shared/widgets/app_text_field.dart"
+  loading_widget: "lib/shared/widgets/app_loading_indicator.dart"

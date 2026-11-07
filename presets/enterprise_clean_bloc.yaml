@@ -1,0 +1,39 @@
+# Preset: Enterprise Clean Architecture with BLoC
+# Best for: Large-scale, multi-developer, high-robustness applications
+
+project_name: "enterprise_app"
+project_type: "multi_flavor"
+flavors:
+  - "dev"
+  - "staging"
+  - "prod"
+architecture: "feature_first_clean"
+state_management: "bloc_cubit"
+network_client: "dio"
+dependency_injection: "injectable_get_it"
+navigation: "go_router"
+localization:
+  engine: "arb_gen_l10n"
+  default_locale: "ar"
+  supported_locales:
+    - "ar"
+    - "en"
+directionality: "rtl_first"
+design_system:
+  tokens_path: "lib/core/configs/values"
+  source: "figma_folder"
+  strict_mode: true
+testing_gate: "strict"
+secrets_management:
+  enabled: true
+  strategy: "dart_define"
+living_documentation:
+  living_readme: true
+  feature_readmes: true
+custom_tokens:
+  button: "lib/material/buttons/app_button.dart"
+  back_button: "lib/material/buttons/app_back_button.dart"
+  image: "lib/material/media/app_image.dart"
+  svg_icon: "lib/material/media/svg_icon.dart"
+  text_field: "lib/material/inputs/app_text_form_field.dart"
+  loading_widget: "lib/material/loading/app_loading_widget.dart"

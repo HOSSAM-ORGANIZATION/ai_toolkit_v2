@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UniversalProjectProfile",
+  "description": "Standardized configuration schema defining the architectural DNA, design system, and technical constraints of a project managed by Universal AI Toolkit.",
+  "type": "object",
+  "required": [
+    "project_name",
+    "project_type",
+    "architecture",
+    "state_management",
+    "network_client",
+    "dependency_injection",
+    "navigation",
+    "localization",
+    "directionality",
+    "design_system",
+    "testing_gate"
+  ],
+  "properties": {
+    "project_name": {
+      "type": "string",
+      "description": "Human-readable name or package identifier of the project"
+    },
+    "project_type": {
+      "type": "string",
+      "enum": ["single_app", "multi_flavor", "multi_package", "monorepo"],
+      "description": "Target application archetype"
+    },
+    "flavors": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of active flavors or packages (e.g. ['user', 'provider', 'delivery'] or ['dev', 'prod'])"
+    },
+    "architecture": {
+      "type": "string",
+      "enum": ["feature_first_clean", "layer_first", "modular", "custom"],
+      "description": "Directory layout and separation of concerns"
+    },
+    "state_management": {
+      "type": "string",
+      "enum": ["bloc_cubit", "riverpod", "provider", "mobx", "signals", "none"],
+      "description": "Primary state management library"
+    },
+    "network_client": {
+      "type": "string",
+      "enum": ["dio", "retrofit", "http", "graphql", "none"],
+      "description": "HTTP client / networking abstraction"
+    },
+    "dependency_injection": {
+      "type": "string",
+      "enum": ["injectable_get_it", "riverpod", "none_manual"],
+      "description": "Inversion of control / service locator framework"
+    },
+    "navigation": {
+      "type": "string",
+      "enum": ["go_router", "auto_route", "navigator_2", "getx_nav"],
+      "description": "Routing and navigation framework"
+    },
+    "localization": {
+      "type": "object",
+      "required": ["engine", "default_locale", "supported_locales"],
+      "properties": {
+        "engine": {
+          "type": "string",
+          "enum": ["arb_gen_l10n", "easy_localization_json", "slang", "none"]
+        },
+        "default_locale": { "type": "string" },
+        "supported_locales": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "directionality": {
+      "type": "string",
+      "enum": ["rtl_first", "ltr_first", "bi_directional"],
+      "description": "Default reading order and layout flow"
+    },
+    "design_system": {
+      "type": "object",
+      "required": ["tokens_path", "source", "strict_mode"],
+      "properties": {
+        "tokens_path": {
+          "type": "string",
+          "description": "Path to tokens directory (e.g. lib/core/configs/values or lib/theme)"
+        },
+        "source": {
+          "type": "string",
+          "enum": ["google_stitch_mcp", "google_stitch_folder", "figma_mcp", "figma_folder", "manual"]
+        },
+        "strict_mode": {
+          "type": "boolean",
+          "description": "Disallows hardcoded colors, magic font sizes, or ad-hoc paddings"
+        }
+      }
+    },
+    "testing_gate": {
+      "type": "string",
+      "enum": ["strict", "recommended", "mvp_disabled"],
+      "description": "Enforcement level for automated tests per feature phase"
+    },
+    "secrets_management": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "strategy": {
+          "type": "string",
+          "enum": ["dart_define", "env_file", "none"]
+        }
+      }
+    },
+    "custom_tokens": {
+      "type": "object",
+      "description": "Design system shared wrapper component paths relative to lib/",
+      "properties": {
+        "button": { "type": "string" },
+        "back_button": { "type": "string" },
+        "image": { "type": "string" },
+        "svg_icon": { "type": "string" },
+        "text_field": { "type": "string" },
+        "loading_widget": { "type": "string" }
+      }
+    },
+    "living_documentation": {
+      "type": "object",
+      "properties": {
+        "living_readme": { "type": "boolean" },
+        "feature_readmes": { "type": "boolean" }
+      }
+    }
+  }
+}
