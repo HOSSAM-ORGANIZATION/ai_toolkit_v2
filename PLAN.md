@@ -292,15 +292,15 @@ flowchart LR
 ### Phase 7: End-to-End Verification & Documentation
 > **Goal:** Validate the toolkit against multiple real-world archetypes and document usage.
 
-- [ ] **Task 7.1: Archetype Verification Testing**
+- [x] **Task 7.1: Archetype Verification Testing**
   - Test Case A: Fresh single-app Flutter project (Riverpod + GoRouter + JSON l10n).
   - Test Case B: Multi-flavor enterprise project (Bloc + Clean Architecture + ARB l10n).
   - Test Case C: Stitch Design Ingestion & Design System Token verification (Zero-hardcoding test).
-- [ ] **Task 7.2: Comprehensive Documentation**
+- [x] **Task 7.2: Comprehensive Documentation**
   - `README.md`: Toolkit overview, philosophy, and installation instructions.
   - `INDEX.md`: Agent entrypoint and task routing table.
   - `docs/`: In-depth guides for architecture, workflows, clean UI standards, design system enforcement, and performance.
-- [ ] **Task 7.3: Git Repository Initialization & Release Tagging**
+- [x] **Task 7.3: Git Repository Initialization & Release Tagging**
   - Initialize clean Git repository at `ai_toolkit_v2`.
   - Setup `.gitignore`, commit all initial modules, and tag release `v2.0.0-universal`.
 
