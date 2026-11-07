@@ -14,6 +14,7 @@ Usage:
   toolkit <command> [options]
 
 Core Commands:
+  setup / quickstart                   One-shot setup: Makefile, Profile Wizard, IDE rules
   init [--prd PATH] [--preset NAME]   Run interactive project profile wizard
   check [PATH]                         Validate project_profile.yaml integrity
   plan-split <PATH | --all>            Rotate completed phases from plan.md to history.md
@@ -35,6 +36,9 @@ cmd="$1"
 shift || true
 
 case "$cmd" in
+  setup|quickstart)
+    bash "$TOOLKIT_DIR/setup/quickstart.sh" "$@"
+    ;;
   init)
     python3 "$TOOLKIT_DIR/bin/wizard/init_profile.py" "$@"
     ;;

@@ -41,23 +41,24 @@ It decouples agent execution logic from concrete codebase naming, enabling seaml
 
 ---
 
-## 🚀 Quickstart for Host Projects
+## 🚀 Quickstart for Any Host Project (One-Liner)
 
-### 1. Add Submodule
-In your host project root:
+To set up the entire toolkit in any project in **one single command**:
+
 ```bash
-git submodule add <your-private-toolkit-repo-url> ai_toolkit
+git submodule add <your-private-toolkit-repo-url> ai_toolkit && bash ai_toolkit/setup/quickstart.sh
 ```
 
-### 2. Initialize Project Profile
-Run the interactive setup wizard:
-```bash
-python3 ai_toolkit/bin/wizard/init_profile.py
-```
-Or choose a preset directly:
-```bash
-python3 ai_toolkit/bin/wizard/init_profile.py --preset enterprise_clean_bloc
-```
+### What this single command does automatically:
+1. Registers the toolkit submodule.
+2. Copies the **Universal Adaptive Makefile** to your project root.
+3. Launches the **Interactive Profile Wizard** to lock project architecture and constraints.
+4. Deploys **Cursor rules**, **skills**, **ignore files**, and **VS Code search exclusions**.
+5. Runs an integrity check to verify everything is 100% green.
+
+---
+
+### Manual Setup (Alternative Step-by-Step)
 
 ### 3. Install IDE Rules & Exclusions
 ```bash
