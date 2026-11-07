@@ -166,6 +166,7 @@ def run_wizard():
             with open(out_file, "w", encoding="utf-8") as f:
                 f.write(content)
             print(f"✅ Created {out_file} using preset '{args.preset}'.")
+            generate_project_scaffolding(target_dir, {"project_name": target_dir.name, "architecture": "feature_first_clean", "state_management": "bloc_cubit", "flavors": []}, toolkit_dir)
             return
 
     # Check for existing PRD or pubspec
