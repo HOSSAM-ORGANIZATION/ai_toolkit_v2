@@ -1,0 +1,97 @@
+import 'package:flutter/material.dart';
+
+/// Result type returned by payment webview flows
+sealed class PaymentResult {
+  const PaymentResult();
+}
+
+final class PaymentSuccess extends PaymentResult {
+  final String? transactionId;
+  const PaymentSuccess({this.transactionId});
+}
+
+final class PaymentFailed extends PaymentResult {
+  final String message;
+  const PaymentFailed(this.message);
+}
+
+final class PaymentCanceled extends PaymentResult {
+  const PaymentCanceled();
+}
+
+/// Generic Payment Gateway WebView Container
+///
+/// Features:
+/// - Intercepts URL callbacks (e.g. Paymob, HyperPay, Stripe, MyFatoorah).
+/// - Returns typed [PaymentResult] to caller upon completion.
+class PaymentWebViewPage extends StatefulWidget {
+  final String paymentUrl;
+  final String successUrlPattern;
+  final String failUrlPattern;
+  final String title;
+
+  const PaymentWebViewPage({
+    super.key,
+    required this.paymentUrl,
+    this.successUrlPattern = 'callback?success=true',
+    this.failUrlPattern = 'callback?success=false',
+    this.title = 'Payment',
+  });
+
+  static Future<PaymentResult?> open(
+    BuildContext context, {
+    required String paymentUrl,
+    String successPattern = 'success',
+    String failPattern = 'fail',
+  }) {
+    return Navigator.of(context).push<PaymentResult>(
+      MaterialPageRoute(
+        builder: (ctx) => PaymentWebViewPage(
+          paymentUrl: paymentUrl,
+          successUrlPattern: successPattern,
+          failUrlPattern: failPattern,
+        ),
+      ),
+    );
+  }
+
+  @override
+  State<PaymentWebViewPage> createState() => _PaymentWebViewPageState();
+}
+
+class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
+  bool _isLoading = true;
+
+  void _onNavigationRequest(String url) {
+    if (url.contains(widget.successUrlPattern)) {
+      Navigator.of(context).pop(const PaymentSuccess());
+    } else if (url.contains(widget.failUrlPattern)) {
+      Navigator.of(context).pop(const PaymentFailed('Payment transaction declined.'));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded),
+          onPressed: () => Navigator.of(context).pop(const PaymentCanceled()),
+        ),
+      ),
+      body: Stack(
+        children: [
+          // Replace with WebViewWidget / InAppWebView according to project dependency
+          Center(
+            child: Text(
+              'Payment URL: ${widget.paymentUrl}\n(Attach project WebView plugin here)',
+              textAlign: TextAlign.center,
+            ),
+          ),
+          if (_isLoading) const Center(child: CircularProgressIndicator.adaptive()),
+        ],
+      ),
+    );
+  }
+}

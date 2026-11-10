@@ -16,6 +16,7 @@ Usage:
 Core Commands:
   setup / quickstart                   One-shot setup: Makefile, Profile Wizard, IDE rules
   init [--prd PATH] [--preset NAME]   Run interactive project profile wizard
+  add <BLUEPRINT> [options]            Scaffold on-demand UI/Pattern/Utility building blocks
   check [PATH]                         Validate project_profile.yaml integrity
   plan-split <PATH | --all>            Rotate completed phases from plan.md to history.md
   context <FEATURE> [PHASE]            Calculate resolved token load budget
@@ -41,6 +42,9 @@ case "$cmd" in
     ;;
   init)
     python3 "$TOOLKIT_DIR/bin/wizard/init_profile.py" "$@"
+    ;;
+  add|blueprint)
+    python3 "$TOOLKIT_DIR/bin/scaffolder/add_blueprint.py" "$@"
     ;;
   check)
     python3 "$TOOLKIT_DIR/bin/check-profile" "$@"

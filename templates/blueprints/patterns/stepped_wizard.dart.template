@@ -1,0 +1,204 @@
+import 'package:flutter/material.dart';
+
+/// Step descriptor for [SteppedWizardView]
+class WizardStep {
+  final String title;
+  final Widget content;
+  final bool Function()? validate;
+
+  const WizardStep({
+    required this.title,
+    required this.content,
+    this.validate,
+  });
+}
+
+/// Universal Stepped Wizard Blueprint
+/// Provides multi-step checkout/registration flow with step indicators and validation.
+class SteppedWizardView extends StatefulWidget {
+  final List<WizardStep> steps;
+  final Future<void> Function() onComplete;
+  final String nextLabel;
+  final String backLabel;
+  final String finishLabel;
+  final bool isSubmitting;
+
+  const SteppedWizardView({
+    super.key,
+    required this.steps,
+    required this.onComplete,
+    this.nextLabel = 'التالي',
+    this.backLabel = 'السابق',
+    this.finishLabel = 'إتمام',
+    this.isSubmitting = false,
+  });
+
+  @override
+  State<SteppedWizardView> createState() => _SteppedWizardViewState();
+}
+
+class _SteppedWizardViewState extends State<SteppedWizardView> {
+  int _currentStep = 0;
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: 0);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  bool get _isLastStep => _currentStep == widget.steps.length - 1;
+  bool get _isFirstStep => _currentStep == 0;
+
+  void _onNext() {
+    final current = widget.steps[_currentStep];
+    if (current.validate != null && !current.validate!()) {
+      return;
+    }
+
+    if (_isLastStep) {
+      widget.onComplete();
+    } else {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _onBack() {
+    if (!_isFirstStep) {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      children: [
+        // 1. Step Indicator Bar
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+          child: Row(
+            children: List.generate(widget.steps.length * 2 - 1, (index) {
+              if (index.isOdd) {
+                final stepIndex = index ~/ 2;
+                final isCompleted = _currentStep > stepIndex;
+                return Expanded(
+                  child: Container(
+                    height: 2,
+                    color: isCompleted
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.outlineVariant.withOpacity(0.5),
+                  ),
+                );
+              }
+
+              final stepIndex = index ~/ 2;
+              final isCurrent = _currentStep == stepIndex;
+              final isCompleted = _currentStep > stepIndex;
+
+              return Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isCompleted || isCurrent
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.surfaceVariant,
+                  border: isCurrent
+                      ? Border.all(color: theme.colorScheme.primaryContainer, width: 3)
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: isCompleted
+                    ? Icon(
+                        Icons.check,
+                        size: 16,
+                        color: theme.colorScheme.onPrimary,
+                      )
+                    : Text(
+                        '${stepIndex + 1}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: isCurrent
+                              ? theme.colorScheme.onPrimary
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+              );
+            }),
+          ),
+        ),
+
+        // Step Title
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Text(
+            widget.steps[_currentStep].title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // 2. Step Content (PageView)
+        Expanded(
+          child: PageView.builder(
+            controller: _pageController,
+            physics: const NeverScrollableScrollPhysics(),
+            onPageChanged: (page) => setState(() => _currentStep = page),
+            itemCount: widget.steps.length,
+            itemBuilder: (context, index) => widget.steps[index].content,
+          ),
+        ),
+
+        // 3. Navigation Buttons
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                if (!_isFirstStep)
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: widget.isSubmitting ? null : _onBack,
+                      child: Text(widget.backLabel),
+                    ),
+                  ),
+                if (!_isFirstStep) const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton(
+                    onPressed: widget.isSubmitting ? null : _onNext,
+                    child: widget.isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+                          )
+                        : Text(_isLastStep ? widget.finishLabel : widget.nextLabel),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

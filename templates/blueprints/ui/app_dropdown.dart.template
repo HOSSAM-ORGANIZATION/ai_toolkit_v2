@@ -1,0 +1,245 @@
+import 'package:flutter/material.dart';
+
+/// Generic Searchable Dropdown Selector
+///
+/// Features:
+/// - Generic typed selection (`AppDropdown<T>`).
+/// - Opens a smooth Modal Bottom Sheet with live search filtering.
+/// - Zero external dependencies; zero complex Cubit overhead.
+class AppDropdown<T> extends StatelessWidget {
+  final String label;
+  final String? hint;
+  final T? value;
+  final List<T> items;
+  final String Function(T) itemLabel;
+  final void Function(T) onSelected;
+  final bool isRequired;
+  final bool isSearchable;
+  final String searchHint;
+
+  const AppDropdown({
+    super.key,
+    required this.label,
+    required this.items,
+    required this.itemLabel,
+    required this.onSelected,
+    this.value,
+    this.hint,
+    this.isRequired = false,
+    this.isSearchable = true,
+    this.searchHint = 'Search...',
+  });
+
+  void _openSelectionSheet(BuildContext context) {
+    showModalBottomSheet<T>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _DropdownSelectionSheet<T>(
+        title: label,
+        items: items,
+        selectedItem: value,
+        itemLabel: itemLabel,
+        isSearchable: isSearchable,
+        searchHint: searchHint,
+      ),
+    ).then((selected) {
+      if (selected != null) {
+        onSelected(selected);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final displayText = value != null ? itemLabel(value as T) : (hint ?? 'Select $label');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            if (isRequired)
+              Text(
+                ' *',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.error,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 6.0),
+        InkWell(
+          onTap: () => _openSelectionSheet(context),
+          borderRadius: BorderRadius.circular(12.0),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12.0),
+              border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    displayText,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: value != null ? colorScheme.onSurface : colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+                Icon(Icons.keyboard_arrow_down_rounded, color: colorScheme.onSurfaceVariant),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DropdownSelectionSheet<T> extends StatefulWidget {
+  final String title;
+  final List<T> items;
+  final T? selectedItem;
+  final String Function(T) itemLabel;
+  final bool isSearchable;
+  final String searchHint;
+
+  const _DropdownSelectionSheet({
+    required this.title,
+    required this.items,
+    required this.selectedItem,
+    required this.itemLabel,
+    required this.isSearchable,
+    required this.searchHint,
+  });
+
+  @override
+  State<_DropdownSelectionSheet<T>> createState() => _DropdownSelectionSheetState<T>();
+}
+
+class _DropdownSelectionSheetState<T> extends State<_DropdownSelectionSheet<T>> {
+  late List<T> _filteredItems = widget.items;
+  final TextEditingController _searchController = TextEditingController();
+
+  void _onSearch(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredItems = widget.items;
+      } else {
+        _filteredItems = widget.items
+            .where((item) => widget.itemLabel(item).toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.75,
+      ),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16.0,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12.0),
+          Container(
+            width: 40.0,
+            height: 4.0,
+            decoration: BoxDecoration(
+              color: colorScheme.outline.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2.0),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ),
+          if (widget.isSearchable)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: TextField(
+                controller: _searchController,
+                onChanged: _onSearch,
+                decoration: InputDecoration(
+                  hintText: widget.searchHint,
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
+                ),
+              ),
+            ),
+          Expanded(
+            child: _filteredItems.isEmpty
+                ? Center(
+                    child: Text('No results found', style: theme.textTheme.bodyMedium),
+                  )
+                : ListView.separated(
+                    itemCount: _filteredItems.length,
+                    separatorBuilder: (_, __) => Divider(height: 1, color: colorScheme.outline.withValues(alpha: 0.1)),
+                    itemBuilder: (context, index) {
+                      final item = _filteredItems[index];
+                      final isSelected = item == widget.selectedItem;
+                      return ListTile(
+                        title: Text(
+                          widget.itemLabel(item),
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+                          ),
+                        ),
+                        trailing: isSelected ? Icon(Icons.check_rounded, color: colorScheme.primary) : null,
+                        onTap: () => Navigator.of(context).pop(item),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -1,0 +1,60 @@
+import 'package:flutter/foundation.dart';
+
+/// Generic Presentation Broadcast Observer Hub
+///
+/// Features:
+/// - Presentation-layer only fan-out: notifies independent UI widgets across the app
+///   when an entity mutates (e.g. Orders, Cart, Notifications).
+/// - Zero domain/data leakage; zero heavy third-party event bus dependencies.
+class ObserverHub<T> {
+  final List<void Function(T? payload)> _listeners = [];
+
+  void attach(void Function(T? payload) listener) {
+    if (!_listeners.contains(listener)) {
+      _listeners.add(listener);
+    }
+  }
+
+  void detach(void Function(T? payload) listener) {
+    _listeners.remove(listener);
+  }
+
+  void notify([T? payload]) {
+    for (final listener in List.of(_listeners)) {
+      listener(payload);
+    }
+  }
+
+  void clear() {
+    _listeners.clear();
+  }
+}
+
+/// Example Concrete Hub Instance for Orders
+///
+/// Usage in Screen A (trigger):
+/// ```dart
+/// OrderEventHub.notify();
+/// ```
+///
+/// Usage in Screen B (listener):
+/// ```dart
+/// @override
+/// void initState() {
+///   super.initState();
+///   OrderEventHub.attach(_onOrdersChanged);
+/// }
+///
+/// @override
+/// void dispose() {
+///   OrderEventHub.detach(_onOrdersChanged);
+///   super.dispose();
+/// }
+/// ```
+abstract final class OrderEventHub {
+  static final ObserverHub<void> _instance = ObserverHub<void>();
+
+  static void attach(VoidCallback listener) => _instance.attach((_) => listener());
+  static void detach(VoidCallback listener) => _instance.detach((_) => listener());
+  static void notify() => _instance.notify();
+}

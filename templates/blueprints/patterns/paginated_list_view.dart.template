@@ -1,0 +1,183 @@
+import 'package:flutter/material.dart';
+
+/// Universal Paginated List View Blueprint
+/// Provides infinite scroll, pull-to-refresh, empty/error/loading-more states.
+/// 
+/// Zero external package dependencies. Works seamlessly with BLoC, Riverpod, or ValueNotifier.
+class PaginatedListView<T> extends StatefulWidget {
+  final List<T> items;
+  final Widget Function(BuildContext context, T item, int index) itemBuilder;
+  final Future<void> Function() onRefresh;
+  final VoidCallback onLoadMore;
+  final bool isLoadingMore;
+  final bool hasMore;
+  final bool isLoading;
+  final String? errorMessage;
+  final VoidCallback? onRetry;
+  final Widget? emptyWidget;
+  final Widget? loadingWidget;
+  final Widget Function(BuildContext context, int index)? separatorBuilder;
+  final EdgeInsetsGeometry padding;
+  final ScrollPhysics? physics;
+  final double loadMoreThreshold;
+
+  const PaginatedListView({
+    super.key,
+    required this.items,
+    required this.itemBuilder,
+    required this.onRefresh,
+    required this.onLoadMore,
+    this.isLoadingMore = false,
+    this.hasMore = true,
+    this.isLoading = false,
+    this.errorMessage,
+    this.onRetry,
+    this.emptyWidget,
+    this.loadingWidget,
+    this.separatorBuilder,
+    this.padding = const EdgeInsets.all(16),
+    this.physics,
+    this.loadMoreThreshold = 200.0,
+  });
+
+  @override
+  State<PaginatedListView<T>> createState() => _PaginatedListViewState<T>();
+}
+
+class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController()..addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!widget.hasMore || widget.isLoadingMore || widget.isLoading) return;
+
+    if (_scrollController.hasClients) {
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final currentScroll = _scrollController.position.pixels;
+      if (maxScroll - currentScroll <= widget.loadMoreThreshold) {
+        widget.onLoadMore();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 1. Initial Loading State
+    if (widget.isLoading && widget.items.isEmpty) {
+      return widget.loadingWidget ??
+          const Center(
+            child: CircularProgressIndicator.adaptive(),
+          );
+    }
+
+    // 2. Error State (Initial Fetch Failure)
+    if (widget.errorMessage != null && widget.items.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: widget.padding,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+              const SizedBox(height: 12),
+              Text(
+                widget.errorMessage!,
+                textAlign: TextAlign.textAlign,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              if (widget.onRetry != null) ...[
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: widget.onRetry,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('إعادة المحاولة'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 3. Empty State
+    if (widget.items.isEmpty) {
+      return RefreshIndicator.adaptive(
+        onRefresh: widget.onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: widget.padding,
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.5,
+              child: widget.emptyWidget ??
+                  const Center(
+                    child: Text('لا توجد بيانات متاحة'),
+                  ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 4. Content List with Pull-To-Refresh and Infinite Loader
+    final itemCount = widget.items.length + (widget.hasMore ? 1 : 0);
+
+    return RefreshIndicator.adaptive(
+      onRefresh: widget.onRefresh,
+      child: widget.separatorBuilder != null
+          ? ListView.separated(
+              controller: _scrollController,
+              physics: widget.physics ?? const AlwaysScrollableScrollPhysics(),
+              padding: widget.padding,
+              itemCount: itemCount,
+              separatorBuilder: (context, index) {
+                if (index < widget.items.length - 1) {
+                  return widget.separatorBuilder!(context, index);
+                }
+                return const SizedBox.shrink();
+              },
+              itemBuilder: _buildItem,
+            )
+          : ListView.builder(
+              controller: _scrollController,
+              physics: widget.physics ?? const AlwaysScrollableScrollPhysics(),
+              padding: widget.padding,
+              itemCount: itemCount,
+              itemBuilder: _buildItem,
+            ),
+    );
+  }
+
+  Widget _buildItem(BuildContext context, int index) {
+    if (index >= widget.items.length) {
+      // Bottom Loader / End of List
+      if (widget.isLoadingMore) {
+        return const Padding(
+          padding: EdgeInsets.symmetric(vertical: 24.0),
+          child: Center(
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator.adaptive(strokeWidth: 2.5),
+            ),
+          ),
+        );
+      }
+      return const SizedBox.shrink();
+    }
+
+    return widget.itemBuilder(context, widget.items[index], index);
+  }
+}

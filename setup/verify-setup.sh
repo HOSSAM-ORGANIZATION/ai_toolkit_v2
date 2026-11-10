@@ -28,7 +28,7 @@ for preset in enterprise_clean_bloc modern_modular_riverpod lean_mvp; do
 done
 
 # 2. Check Core Bin Executables
-for b in toolkit check-profile plan-splitter l10n-sync.py toolkit-context.py wizard/init_profile.py; do
+for b in toolkit check-profile plan-splitter l10n-sync.py toolkit-context.py wizard/init_profile.py scaffolder/add_blueprint.py; do
   if [ -x "$TOOLKIT_DIR/bin/$b" ]; then
     echo "✅ Executable tool verified: bin/$b"
   else
@@ -36,6 +36,14 @@ for b in toolkit check-profile plan-splitter l10n-sync.py toolkit-context.py wiz
     ERRORS=$((ERRORS + 1))
   fi
 done
+
+# Check Blueprints Catalog
+if [ -f "$TOOLKIT_DIR/templates/blueprints/CATALOG.md" ]; then
+  echo "✅ Blueprints catalog verified (CATALOG.md)"
+else
+  echo "❌ Missing templates/blueprints/CATALOG.md"
+  ERRORS=$((ERRORS + 1))
+fi
 
 # 3. Check LOADMAP.md & Agent Cards
 if [ -f "$TOOLKIT_DIR/LOADMAP.md" ]; then

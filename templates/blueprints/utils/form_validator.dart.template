@@ -1,0 +1,124 @@
+/// Universal Form Validator
+/// Provides static validation helpers and a fluent chainable validator builder.
+///
+/// Example:
+/// ```dart
+/// final emailValidator = FormValidator.builder()
+///   .required('البريد الإلكتروني مطلوب')
+///   .email('صيغة البريد الإلكتروني غير صحيحة')
+///   .build();
+/// ```
+typedef ValidationRule = String? Function(String? value);
+
+class FormValidator {
+  final List<ValidationRule> _rules = [];
+
+  FormValidator();
+
+  static FormValidator builder() => FormValidator();
+
+  FormValidator required([String message = 'هذا الحقل مطلوب']) {
+    _rules.add((value) {
+      if (value == null || value.trim().isEmpty) {
+        return message;
+      }
+      return null;
+    });
+    return this;
+  }
+
+  FormValidator minLength(int min, [String? message]) {
+    _rules.add((value) {
+      if (value != null && value.trim().isNotEmpty && value.trim().length < min) {
+        return message ?? 'يجب ألا يقل عن $min أحرف';
+      }
+      return null;
+    });
+    return this;
+  }
+
+  FormValidator maxLength(int max, [String? message]) {
+    _rules.add((value) {
+      if (value != null && value.trim().length > max) {
+        return message ?? 'يجب ألا يزيد عن $max أحرف';
+      }
+      return null;
+    });
+    return this;
+  }
+
+  FormValidator email([String message = 'البريد الإلكتروني غير صحيح']) {
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    _rules.add((value) {
+      if (value != null && value.trim().isNotEmpty && !emailRegex.hasMatch(value.trim())) {
+        return message;
+      }
+      return null;
+    });
+    return this;
+  }
+
+  FormValidator phone([String message = 'رقم الهاتف غير صحيح']) {
+    final phoneRegex = RegExp(r'^(?:\+?\d{8,15})$');
+    _rules.add((value) {
+      if (value != null && value.trim().isNotEmpty) {
+        final sanitized = value.replaceAll(RegExp(r'[\s\-]'), '');
+        if (!phoneRegex.hasMatch(sanitized)) {
+          return message;
+        }
+      }
+      return null;
+    });
+    return this;
+  }
+
+  FormValidator match(String Function() targetValueGetter, [String message = 'القيمتان غير متطابقتين']) {
+    _rules.add((value) {
+      if (value != targetValueGetter()) {
+        return message;
+      }
+      return null;
+    });
+    return this;
+  }
+
+  FormValidator custom(ValidationRule rule) {
+    _rules.add(rule);
+    return this;
+  }
+
+  /// Builds a validator function compatible with [TextFormField.validator]
+  String? Function(String?) build() {
+    return (value) {
+      for (final rule in _rules) {
+        final error = rule(value);
+        if (error != null) return error;
+      }
+      return null;
+    };
+  }
+
+  // --- Static Convenience Methods ---
+
+  static String? requiredField(String? value, [String message = 'هذا الحقل مطلوب']) {
+    if (value == null || value.trim().isEmpty) return message;
+    return null;
+  }
+
+  static String? emailField(String? value, [String message = 'البريد الإلكتروني غير صحيح']) {
+    if (value == null || value.trim().isEmpty) return null;
+    final regex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    if (!regex.hasMatch(value.trim())) return message;
+    return null;
+  }
+
+  static String? phoneField(String? value, [String message = 'رقم الهاتف غير صحيح']) {
+    if (value == null || value.trim().isEmpty) return null;
+    final sanitized = value.replaceAll(RegExp(r'[\s\-]'), '');
+    final regex = RegExp(r'^(?:\+?\d{8,15})$');
+    if (!regex.hasMatch(sanitized)) return message;
+    return null;
+  }
+}

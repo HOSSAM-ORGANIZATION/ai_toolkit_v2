@@ -1,0 +1,112 @@
+import 'package:flutter/material.dart';
+
+/// Primary Brand Action Button
+///
+/// Features:
+/// - Built-in adaptive loading indicator (disables interaction while loading).
+/// - Full-width (`isExpanded: true`) or shrink-wrapped sizing.
+/// - Leading and trailing icon slots.
+/// - Adheres strictly to project theme tokens (falls back to ColorScheme.primary).
+class AppButton extends StatelessWidget {
+  final String? text;
+  final Widget? child;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final bool isEnabled;
+  final bool isExpanded;
+  final Widget? leading;
+  final Widget? trailing;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
+  final TextStyle? textStyle;
+  final double height;
+  final double borderRadius;
+  final EdgeInsetsGeometry? padding;
+
+  const AppButton({
+    super.key,
+    this.text,
+    this.child,
+    this.onPressed,
+    this.isLoading = false,
+    this.isEnabled = true,
+    this.isExpanded = true,
+    this.leading,
+    this.trailing,
+    this.backgroundColor,
+    this.foregroundColor,
+    this.textStyle,
+    this.height = 50.0,
+    this.borderRadius = 12.0,
+    this.padding,
+  }) : assert(text != null || child != null, 'Either text or child must be provided.');
+
+  bool get _canPress => isEnabled && !isLoading && onPressed != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final effectiveBg = backgroundColor ?? colorScheme.primary;
+    final effectiveFg = foregroundColor ?? colorScheme.onPrimary;
+
+    final buttonStyle = ElevatedButton.styleFrom(
+      backgroundColor: effectiveBg,
+      foregroundColor: effectiveFg,
+      disabledBackgroundColor: effectiveBg.withValues(alpha: 0.4),
+      disabledForegroundColor: effectiveFg.withValues(alpha: 0.6),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(borderRadius),
+      ),
+      padding: padding ?? const EdgeInsets.symmetric(horizontal: 16.0),
+    );
+
+    Widget content;
+    if (isLoading) {
+      content = SizedBox(
+        height: 22.0,
+        width: 22.0,
+        child: CircularProgressIndicator.adaptive(
+          strokeWidth: 2.5,
+          valueColor: AlwaysStoppedAnimation<Color>(effectiveFg),
+        ),
+      );
+    } else if (child != null) {
+      content = child!;
+    } else {
+      content = Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (leading != null) ...[leading!, const SizedBox(width: 8.0)],
+          Text(
+            text!,
+            style: textStyle ??
+                theme.textTheme.titleMedium?.copyWith(
+                  color: effectiveFg,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          if (trailing != null) ...[const SizedBox(width: 8.0), trailing!],
+        ],
+      );
+    }
+
+    Widget button = SizedBox(
+      height: height,
+      child: ElevatedButton(
+        style: buttonStyle,
+        onPressed: _canPress ? onPressed : null,
+        child: content,
+      ),
+    );
+
+    if (isExpanded) {
+      button = SizedBox(width: double.infinity, child: button);
+    }
+
+    return button;
+  }
+}

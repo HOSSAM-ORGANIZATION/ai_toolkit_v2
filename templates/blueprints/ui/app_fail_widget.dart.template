@@ -1,0 +1,69 @@
+import 'package:flutter/material.dart';
+
+/// Full-Page or Embedded Error State Presentation
+class AppFailWidget extends StatelessWidget {
+  final String title;
+  final String? message;
+  final VoidCallback? onRetry;
+  final String retryText;
+  final Widget? icon;
+
+  const AppFailWidget({
+    super.key,
+    this.title = 'Something went wrong',
+    this.message,
+    this.onRetry,
+    this.retryText = 'Retry',
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            icon ??
+                Container(
+                  width: 72.0,
+                  height: 72.0,
+                  decoration: BoxDecoration(
+                    color: colorScheme.errorContainer.withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.error_outline_rounded, color: colorScheme.error, size: 36.0),
+                ),
+            const SizedBox(height: 16.0),
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            if (message != null) ...[
+              const SizedBox(height: 8.0),
+              Text(
+                message!,
+                style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            if (onRetry != null) ...[
+              const SizedBox(height: 20.0),
+              FilledButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded, size: 18.0),
+                label: Text(retryText),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}

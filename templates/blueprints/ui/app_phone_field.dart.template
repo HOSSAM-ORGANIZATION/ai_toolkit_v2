@@ -1,0 +1,196 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+/// Country Metadata Representation
+class Country {
+  final String name;
+  final String code;
+  final String dialCode;
+  final String flag;
+
+  const Country({
+    required this.name,
+    required this.code,
+    required this.dialCode,
+    required this.flag,
+  });
+}
+
+const List<Country> defaultCountries = [
+  Country(name: 'Saudi Arabia', code: 'SA', dialCode: '+966', flag: '🇸🇦'),
+  Country(name: 'Egypt', code: 'EG', dialCode: '+20', flag: '🇪🇬'),
+  Country(name: 'United Arab Emirates', code: 'AE', dialCode: '+971', flag: '🇦🇪'),
+  Country(name: 'Kuwait', code: 'KW', dialCode: '+965', flag: '🇰🇼'),
+  Country(name: 'Qatar', code: 'QA', dialCode: '+974', flag: '🇶🇦'),
+  Country(name: 'Bahrain', code: 'BH', dialCode: '+973', flag: '🇧🇭'),
+  Country(name: 'Oman', code: 'OM', dialCode: '+968', flag: '🇴🇲'),
+  Country(name: 'Jordan', code: 'JO', dialCode: '+962', flag: '🇯🇴'),
+  Country(name: 'United States', code: 'US', dialCode: '+1', flag: '🇺🇸'),
+  Country(name: 'United Kingdom', code: 'GB', dialCode: '+44', flag: '🇬🇧'),
+];
+
+/// International Phone Number Input Field
+class AppPhoneField extends StatefulWidget {
+  final TextEditingController? controller;
+  final String label;
+  final String hintText;
+  final bool isRequired;
+  final Country initialCountry;
+  final List<Country> availableCountries;
+  final void Function(String fullNumber)? onChanged;
+  final String? Function(String?)? validator;
+
+  const AppPhoneField({
+    super.key,
+    this.controller,
+    this.label = 'Phone Number',
+    this.hintText = '5XXXXXXXX',
+    this.isRequired = true,
+    this.initialCountry = defaultCountries[0],
+    this.availableCountries = defaultCountries,
+    this.onChanged,
+    this.validator,
+  });
+
+  @override
+  State<AppPhoneField> createState() => _AppPhoneFieldState();
+}
+
+class _AppPhoneFieldState extends State<AppPhoneField> {
+  late Country _selectedCountry = widget.initialCountry;
+  late final TextEditingController _controller = widget.controller ?? TextEditingController();
+
+  void _notifyChange() {
+    final fullNumber = '${_selectedCountry.dialCode}${_controller.text}';
+    widget.onChanged?.call(fullNumber);
+  }
+
+  void _openCountryPicker() {
+    showModalBottomSheet<Country>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _CountryPickerSheet(
+        countries: widget.availableCountries,
+        selectedCountry: _selectedCountry,
+      ),
+    ).then((country) {
+      if (country != null) {
+        setState(() => _selectedCountry = country);
+        _notifyChange();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12.0),
+      borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.label,
+              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+            ),
+            if (widget.isRequired)
+              Text(' *', style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.error, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        const SizedBox(height: 6.0),
+        TextFormField(
+          controller: _controller,
+          keyboardType: TextInputType.phone,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          onChanged: (_) => _notifyChange(),
+          validator: widget.validator,
+          decoration: InputDecoration(
+            hintText: widget.hintText,
+            filled: true,
+            fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+            border: border,
+            enabledBorder: border,
+            focusedBorder: border.copyWith(borderSide: BorderSide(color: colorScheme.primary, width: 1.5)),
+            prefixIcon: InkWell(
+              onTap: _openCountryPicker,
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(12.0)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(_selectedCountry.flag, style: const TextStyle(fontSize: 20.0)),
+                    const SizedBox(width: 6.0),
+                    Text(
+                      _selectedCountry.dialCode,
+                      style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 4.0),
+                    Icon(Icons.arrow_drop_down_rounded, color: colorScheme.onSurfaceVariant),
+                    Container(height: 20.0, width: 1.0, color: colorScheme.outline.withValues(alpha: 0.3), margin: const EdgeInsets.symmetric(horizontal: 6.0)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CountryPickerSheet extends StatelessWidget {
+  final List<Country> countries;
+  final Country selectedCountry;
+
+  const _CountryPickerSheet({required this.countries, required this.selectedCountry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Select Country', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12.0),
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: countries.length,
+              separatorBuilder: (_, __) => Divider(height: 1, color: colorScheme.outline.withValues(alpha: 0.1)),
+              itemBuilder: (ctx, i) {
+                final c = countries[i];
+                final isSelected = c.code == selectedCountry.code;
+                return ListTile(
+                  leading: Text(c.flag, style: const TextStyle(fontSize: 24.0)),
+                  title: Text(c.name),
+                  trailing: Text(c.dialCode, style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.bold)),
+                  selected: isSelected,
+                  onTap: () => Navigator.of(context).pop(c),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

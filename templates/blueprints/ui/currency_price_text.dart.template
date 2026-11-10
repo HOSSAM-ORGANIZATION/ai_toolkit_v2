@@ -1,0 +1,83 @@
+import 'package:flutter/material.dart';
+
+/// Formatted Price and Currency Display
+///
+/// Features:
+/// - Distinct styling for numeric amount and currency symbol.
+/// - Supports currency string (e.g. 'SAR', 'USD', 'EGP') or custom glyph/IconData.
+/// - Formats decimal numbers cleanly.
+class CurrencyPriceText extends StatelessWidget {
+  final num price;
+  final String currency;
+  final IconData? currencyIcon;
+  final TextStyle? priceStyle;
+  final TextStyle? currencyStyle;
+  final bool currencyFirst;
+
+  const CurrencyPriceText({
+    super.key,
+    required this.price,
+    this.currency = 'SAR',
+    this.currencyIcon,
+    this.priceStyle,
+    this.currencyStyle,
+    this.currencyFirst = false,
+  });
+
+  String get _formattedPrice {
+    // If integer, display without decimal trailing zero
+    if (price % 1 == 0) {
+      return price.toInt().toString();
+    }
+    return price.toStringAsFixed(2);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final resolvedPriceStyle = priceStyle ??
+        theme.textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: colorScheme.primary,
+        );
+
+    final resolvedCurrencyStyle = currencyStyle ??
+        theme.textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onSurfaceVariant,
+        );
+
+    final priceSpan = TextSpan(
+      text: _formattedPrice,
+      style: resolvedPriceStyle,
+    );
+
+    InlineSpan currencySpan;
+    if (currencyIcon != null) {
+      currencySpan = WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2.0),
+          child: Icon(currencyIcon, size: (resolvedCurrencyStyle?.fontSize ?? 14.0) * 1.2, color: resolvedCurrencyStyle?.color),
+        ),
+      );
+    } else {
+      currencySpan = TextSpan(
+        text: ' $currency',
+        style: resolvedCurrencyStyle,
+      );
+    }
+
+    final children = currencyFirst
+        ? [currencySpan, const TextSpan(text: ' '), priceSpan]
+        : [priceSpan, currencySpan];
+
+    return Text.rich(
+      TextSpan(children: children),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+}

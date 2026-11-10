@@ -1,0 +1,106 @@
+import 'package:flutter/foundation.dart';
+
+/// Clean Architecture UseCase Contract utilizing Dart 3 Patterns.
+///
+/// Encapsulates a single business logic interaction.
+/// Returns a type-safe [Result<Type>] (or Dart 3 Record `(Failure?, Type?)`).
+abstract interface class UseCase<Type, Params> {
+  Future<Result<Type>> call(Params params);
+}
+
+/// UseCase contract for continuous real-time data streams.
+abstract interface class StreamUseCase<Type, Params> {
+  Stream<Result<Type>> call(Params params);
+}
+
+/// Parameter placeholder when no arguments are required.
+class NoParams {
+  const NoParams();
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || other is NoParams;
+
+  @override
+  int get hashCode => 0;
+}
+
+/// Generic Sealed Result type for predictable domain responses.
+@immutable
+sealed class Result<T> {
+  const Result();
+
+  const factory Result.success(T data) = Success<T>;
+  const factory Result.failure(Failure failure) = FailureResult<T>;
+
+  bool get isSuccess => this is Success<T>;
+  bool get isFailure => this is FailureResult<T>;
+
+  T? get dataOrNull => switch (this) {
+        Success(:final data) => data,
+        _ => null,
+      };
+
+  Failure? get failureOrNull => switch (this) {
+        FailureResult(:final failure) => failure,
+        _ => null,
+      };
+
+  R fold<R>({
+    required R Function(T data) onSuccess,
+    required R Function(Failure failure) onFailure,
+  }) {
+    return switch (this) {
+      Success(:final data) => onSuccess(data),
+      FailureResult(:final failure) => onFailure(failure),
+    };
+  }
+}
+
+final class Success<T> extends Result<T> {
+  final T data;
+  const Success(this.data);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Success<T> && data == other.data;
+
+  @override
+  int get hashCode => data.hashCode;
+}
+
+final class FailureResult<T> extends Result<T> {
+  final Failure failure;
+  const FailureResult(this.failure);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is FailureResult<T> && failure == other.failure;
+
+  @override
+  int get hashCode => failure.hashCode;
+}
+
+/// Base Failure representation for domain & data errors.
+@immutable
+class Failure {
+  final String message;
+  final int? statusCode;
+  final Object? error;
+
+  const Failure({
+    required this.message,
+    this.statusCode,
+    this.error,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Failure && message == other.message && statusCode == other.statusCode;
+
+  @override
+  int get hashCode => Object.hash(message, statusCode);
+
+  @override
+  String toString() => 'Failure(message: $message, statusCode: $statusCode)';
+}

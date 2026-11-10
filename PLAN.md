@@ -306,10 +306,36 @@ flowchart LR
 
 ---
 
+### Phase 8: On-Demand Blueprint Catalog & Scaffolding Engine
+> **Goal:** Decoupled, production-grade Flutter building blocks borrowed from battle-tested projects, re-implemented with modern Dart 3+ and clean architecture.
+
+- [x] **Task 8.1: UI Blueprint Catalog (`templates/blueprints/ui/`)**
+  - `app_button`: Primary, Secondary, Outlined, Danger, Text with loading spinner.
+  - `app_text_field`: Universal text field with obscure toggle and error handling.
+  - `app_image`: Multi-source image renderer (network/asset/svg/file) with error fallbacks.
+  - `app_back_button`: Adaptive RTL/LTR back navigation button.
+  - `app_dropdown`: Searchable bottom-sheet dropdown selection widget.
+  - `app_phone_field`: Phone number field with country code picker and validation.
+  - `currency_price_text`: Price text widget with discount strike-through.
+  - `app_fail_widget` & `app_empty_widget`: Clean state handling widgets.
+  - `shimmer_skeleton`: Zero-dependency shimmer loader.
+  - `payment_webview_page`: Payment gateway webview with URL interceptors.
+- [x] **Task 8.2: Pattern & Architecture Blueprints (`templates/blueprints/patterns/`)**
+  - `observer_hub`: Decoupled event bus / observer hub.
+  - `paginated_list_view`: Infinite scroll list with pull-to-refresh and retry.
+  - `async_state`: Dart 3 Sealed Classes `AsyncState<T>` with exhaustive pattern matching.
+  - `guest_guard`: Action interceptor and login bottom sheet for guests.
+  - `use_case`: Clean Architecture UseCase contract with sealed `Result<T>`.
+  - `stepped_wizard`: Multi-step flow controller with indicator and validation.
+- [x] **Task 8.3: Utility Blueprints (`templates/blueprints/utils/`)**
+  - `context_extensions`: Concise BuildContext shortcuts (theme, dimensions, keyboard, SnackBars).
+  - `form_validator`: Fluent chainable form validator (`required().email().minLength(8)`).
+- [x] **Task 8.4: Scaffolding CLI (`bin/scaffolder/add_blueprint.py` & `toolkit add`)**
+  - Interactive/CLI dispatcher copying templates, adjusting class names, and registering in `ai_docs/conventions.md`.
+  - Catalog reference documentation in `templates/blueprints/CATALOG.md`.
+
+---
+
 ## 4. Immediate Execution Plan
 
-We are now ready to begin **Phase 1**:
-1. Initialize the root directory structure inside `ai_toolkit_v2`.
-2. Author `schema/project_profile.schema.json` and standard presets (`presets/`).
-3. Build the PRD/BRD ingestion and interactive onboarding engine (`bin/wizard/init_profile.py`).
-4. Establish the Mandatory Gatekeeper in `templates/app-seed/`.
+All 8 phases have been successfully authored, integrated, tested, and verified!
