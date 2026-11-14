@@ -1,0 +1,59 @@
+# Preset: Moltaqa Software House Standard
+# Best for: Enterprise Saudi/Arabian Market Applications (Single-App or Multi-Flavor)
+
+project_name: "moltaqa_app"
+project_type: "single_app"
+flavors: []
+architecture: "feature_first_clean"
+state_management: "bloc_cubit"
+network_client: "dio"
+dependency_injection: "injectable_get_it"
+navigation: "navigator_2"
+localization:
+  engine: "arb_gen_l10n"
+  default_locale: "ar"
+  supported_locales:
+    - "ar"
+    - "en"
+directionality: "rtl_first"
+design_system:
+  tokens_path: "lib/core/configs/values"
+  source: "figma_folder"
+  strict_mode: true
+testing_gate: "strict"
+secrets_management:
+  enabled: true
+  strategy: "dart_define"
+living_documentation:
+  living_readme: true
+  feature_readmes: true
+qa_verification:
+  enabled: true
+  runner: "maestro"
+  device:
+    platform: "android"
+    preferred_avd: "Pixel_7_API_34"
+  tolerance: "semantic"
+  auto_fix_max_retries: 3
+  flows_path: "test/qa_flows"
+  reports_path: "test/qa_reports"
+  states_to_test:
+    - "default"
+    - "loading"
+    - "empty"
+    - "error"
+    - "offline"
+custom_tokens:
+  button: "lib/material/buttons/app_button.dart"
+  back_button: "lib/material/buttons/app_back_button.dart"
+  image: "lib/material/media/app_image.dart"
+  svg_icon: "lib/material/media/svg_icon.dart"
+  text_field: "lib/material/inputs/app_text_form_field.dart"
+  loading_widget: "lib/material/loading/app_loading_widget.dart"
+signing:
+  preset: "moltaqa"
+  store_file: "upload-keystore.jks"
+apple:
+  team_id: "Q57RLVXT2A"
+  key_id: "4A9WV94BJ9"
+  auth_key_file: "templates/signing/moltaqa/apple/AuthKey_4A9WV94BJ9.p8"

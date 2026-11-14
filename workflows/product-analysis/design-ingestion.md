@@ -63,6 +63,11 @@ Generate or update the token classes inside `tokens_path` (from `project_profile
 - `dimensions.dart`: `abstract final class Dimensions { ... }`
 - `app_theme.dart`: `ThemeData` builder binding the tokens to Material 3.
 
+### Step 5: Preserve Reference Frames for QA Verification
+Save screenshot exports of screen frames to:
+`ai_docs/qa/designs/<feature>.png`
+These assets are used during [Autonomous QA Loop](../qa-verification/autonomous-qa-loop.md) for visual layout and hierarchy comparison.
+
 ---
 
 ## 3. Strict Verification Gate

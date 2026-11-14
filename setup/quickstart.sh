@@ -23,13 +23,19 @@ echo "📂 Project root: $HOST_DIR"
 echo "📂 Toolkit path: $TOOLKIT_DIR"
 echo ""
 
-# 1. Setup Universal Makefile
+# 1. Setup Universal Makefile & Project Wrapper
 if [ ! -f "$HOST_DIR/Makefile" ]; then
   echo "📄 [1/4] Deploying Universal Adaptive Makefile..."
   cp -f "$TOOLKIT_DIR/templates/root/Makefile.universal" "$HOST_DIR/Makefile"
   echo "   ✅ Created $HOST_DIR/Makefile"
 else
   echo "📄 [1/4] Makefile already present in host project."
+fi
+
+if [ ! -f "$HOST_DIR/toolkit" ]; then
+  cp -f "$TOOLKIT_DIR/templates/root/toolkit" "$HOST_DIR/toolkit"
+  chmod +x "$HOST_DIR/toolkit"
+  echo "   ✅ Created $HOST_DIR/toolkit (Project CLI wrapper)"
 fi
 
 # 2. Project Profile (Gatekeeper)

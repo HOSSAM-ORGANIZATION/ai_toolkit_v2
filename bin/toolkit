@@ -14,13 +14,20 @@ Usage:
   toolkit <command> [options]
 
 Core Commands:
-  setup / quickstart                   One-shot setup: Makefile, Profile Wizard, IDE rules
+  setup [MODULE] / quickstart          One-shot setup or modular setup (signing, permissions, icons-splash, network, updater, cloud)
   init [--prd PATH] [--preset NAME]   Run interactive project profile wizard
   add <BLUEPRINT> [options]            Scaffold on-demand UI/Pattern/Utility building blocks
   check [PATH]                         Validate project_profile.yaml integrity
   plan-split <PATH | --all>            Rotate completed phases from plan.md to history.md
   context <FEATURE> [PHASE]            Calculate resolved token load budget
+  deps / packages [sync]               Sync required pub.dev packages based on project profile
+  flavors [setup]                      Configure modern Android & iOS flavors and entrypoints
+  cloud / register [options]           Provision Firebase, Apple App Store, and Google Play Console
+  permissions [MODULES]                Configure Android & iOS permissions (media, location, notifications)
+  signing                              Configure Android keystore and release signing
+  icons-splash                         Configure launcher icons & native splash for all flavors
   l10n <SUBCOMMAND>                    Sync and update ARB / JSON / Slang translations
+  qa <run|gen|status> [FEATURE]        Autonomous QA, Maestro flows & UI verification
   verify                               Verify integrity of toolkit rules, links, and templates
 
 Submodule Management:
@@ -37,8 +44,52 @@ cmd="$1"
 shift || true
 
 case "$cmd" in
-  setup|quickstart)
+  setup)
+    sub="$1"
+    case "$sub" in
+      signing)
+        shift || true
+        python3 "$TOOLKIT_DIR/bin/setup/setup_signing.py" "$@"
+        ;;
+      icons-splash|icons|splash)
+        shift || true
+        python3 "$TOOLKIT_DIR/bin/setup/setup_icons_splash.py" "$@"
+        ;;
+      permissions)
+        shift || true
+        python3 "$TOOLKIT_DIR/bin/setup/setup_permissions.py" "$@"
+        ;;
+      network|interceptors)
+        shift || true
+        python3 "$TOOLKIT_DIR/bin/setup/setup_network.py" "$@"
+        ;;
+      updater)
+        shift || true
+        python3 "$TOOLKIT_DIR/bin/setup/setup_updater.py" "$@"
+        ;;
+      cloud|register)
+        shift || true
+        python3 "$TOOLKIT_DIR/bin/setup/setup_cloud.py" "$@"
+        ;;
+      *)
+        bash "$TOOLKIT_DIR/setup/quickstart.sh" "$@"
+        ;;
+    esac
+    ;;
+  quickstart)
     bash "$TOOLKIT_DIR/setup/quickstart.sh" "$@"
+    ;;
+  signing)
+    python3 "$TOOLKIT_DIR/bin/setup/setup_signing.py" "$@"
+    ;;
+  permissions)
+    python3 "$TOOLKIT_DIR/bin/setup/setup_permissions.py" "$@"
+    ;;
+  icons-splash)
+    python3 "$TOOLKIT_DIR/bin/setup/setup_icons_splash.py" "$@"
+    ;;
+  cloud|register)
+    python3 "$TOOLKIT_DIR/bin/setup/setup_cloud.py" "$@"
     ;;
   init)
     python3 "$TOOLKIT_DIR/bin/wizard/init_profile.py" "$@"
@@ -55,8 +106,17 @@ case "$cmd" in
   context)
     python3 "$TOOLKIT_DIR/bin/toolkit-context.py" "$@"
     ;;
+  deps|packages)
+    python3 "$TOOLKIT_DIR/bin/deps/sync_packages.py" "$@"
+    ;;
+  flavors)
+    python3 "$TOOLKIT_DIR/bin/flavors/setup_flavors.py" "$@"
+    ;;
   l10n)
     python3 "$TOOLKIT_DIR/bin/l10n-sync.py" "$@"
+    ;;
+  qa)
+    python3 "$TOOLKIT_DIR/bin/qa/qa_engine.py" "$@"
     ;;
   verify)
     bash "$TOOLKIT_DIR/setup/verify-setup.sh" "$@"

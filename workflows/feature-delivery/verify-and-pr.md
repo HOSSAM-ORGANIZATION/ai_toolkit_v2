@@ -18,7 +18,13 @@ make analyze
 
 # 4. Test Suite Execution
 make test
+
+# 5. Autonomous QA & Visual Verification (Screen States & Overflows)
+make qa-feature FEATURE=<feature>
 ```
+
+> [!NOTE]
+> If `make qa-feature` fails or reports a `RenderFlex overflow`, follow the [Autonomous QA Loop](../qa-verification/autonomous-qa-loop.md) self-healing guide before proceeding.
 
 ---
 

@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Universal AI Toolkit v2 — Local Project Wrapper (similar to ./gradlew)
+# Designed specifically for Git Submodule & Team workflows.
+#
+# Usage:
+#   ./toolkit setup
+#   ./toolkit init
+#   ./toolkit add <blueprint>
+#   ./toolkit help
+
+set -e
+
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TOOLKIT_DEFAULT_REPO="https://github.com/hossammo-dev/ai_toolkit_v2.git"
+LOCAL_SUBMODULE="$PROJECT_ROOT/ai_toolkit"
+ALT_SUBMODULE="$PROJECT_ROOT/.ai_toolkit"
+GLOBAL_CACHE="$HOME/.ai_toolkit"
+
+# 1. If .gitmodules exists but submodule is uninitialized (fresh clone), initialize it
+if [ -f "$PROJECT_ROOT/.gitmodules" ]; then
+  if [ ! -f "$LOCAL_SUBMODULE/bin/toolkit" ] && [ ! -f "$ALT_SUBMODULE/bin/toolkit" ]; then
+    echo "📦 Project has submodules registered. Initializing ai_toolkit..."
+    git -C "$PROJECT_ROOT" submodule update --init --recursive
+  fi
+fi
+
+# 2. Resolve Toolkit Directory
+RESOLVED_TOOLKIT=""
+
+if [ -f "$LOCAL_SUBMODULE/bin/toolkit" ]; then
+  RESOLVED_TOOLKIT="$LOCAL_SUBMODULE"
+elif [ -f "$ALT_SUBMODULE/bin/toolkit" ]; then
+  RESOLVED_TOOLKIT="$ALT_SUBMODULE"
+elif [ -f "$GLOBAL_CACHE/bin/toolkit" ]; then
+  RESOLVED_TOOLKIT="$GLOBAL_CACHE"
+fi
+
+# 3. If still not resolved:
+if [ -z "$RESOLVED_TOOLKIT" ]; then
+  if [ -d "$PROJECT_ROOT/.git" ]; then
+    echo "⚡ Adding AI Toolkit as Git Submodule in ./ai_toolkit..."
+    git -C "$PROJECT_ROOT" submodule add "$TOOLKIT_DEFAULT_REPO" ai_toolkit || {
+      echo "⚠️ Submodule add failed, falling back to direct shallow clone..."
+      git clone --depth 1 "$TOOLKIT_DEFAULT_REPO" "$LOCAL_SUBMODULE"
+    }
+    RESOLVED_TOOLKIT="$LOCAL_SUBMODULE"
+  else
+    echo "⚡ Cloning AI Toolkit into ./ai_toolkit..."
+    git clone --depth 1 "$TOOLKIT_DEFAULT_REPO" "$LOCAL_SUBMODULE"
+    RESOLVED_TOOLKIT="$LOCAL_SUBMODULE"
+  fi
+fi
+
+# 4. Ensure execution permissions
+chmod +x "$RESOLVED_TOOLKIT"/bin/* "$RESOLVED_TOOLKIT"/setup/*.sh 2>/dev/null || true
+
+# 5. Delegate command directly to master CLI
+exec "$RESOLVED_TOOLKIT/bin/toolkit" "$@"

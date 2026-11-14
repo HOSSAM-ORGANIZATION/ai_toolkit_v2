@@ -43,6 +43,24 @@ living_documentation:
   living_readme: true
   feature_readmes: true
 
+# Autonomous QA & Verification Engine
+qa_verification:
+  enabled: true
+  runner: maestro # maestro | flutter_integration | patrol
+  device:
+    platform: android # android | ios
+    preferred_avd: "{{PREFERRED_AVD}}"
+  tolerance: semantic # semantic | strict
+  auto_fix_max_retries: 3
+  flows_path: test/qa_flows
+  reports_path: test/qa_reports
+  states_to_test:
+    - default
+    - loading
+    - empty
+    - error
+    - offline
+
 # Design System Shared Wrappers (paths relative to project root)
 custom_tokens:
   button: "{{TOKEN_BUTTON_PATH}}"
@@ -51,3 +69,14 @@ custom_tokens:
   svg_icon: "{{TOKEN_SVG_PATH}}"
   text_field: "{{TOKEN_TEXT_FIELD_PATH}}"
   loading_widget: "{{TOKEN_LOADING_PATH}}"
+
+# Baseline Infrastructure & Capabilities
+capabilities:
+  release_signing: false
+  icons_and_splash: false
+  network_interceptors: false
+  permissions:
+    media: false
+    location: false
+    notifications: false
+  store_updater: false

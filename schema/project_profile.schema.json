@@ -127,6 +127,56 @@
         "living_readme": { "type": "boolean" },
         "feature_readmes": { "type": "boolean" }
       }
+    },
+    "qa_verification": {
+      "type": "object",
+      "description": "Autonomous QA, Maestro flow runner, and state chaos verification configuration",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "runner": {
+          "type": "string",
+          "enum": ["maestro", "flutter_integration", "patrol"]
+        },
+        "device": {
+          "type": "object",
+          "properties": {
+            "platform": {
+              "type": "string",
+              "enum": ["android", "ios"]
+            },
+            "preferred_avd": { "type": "string" }
+          }
+        },
+        "tolerance": {
+          "type": "string",
+          "enum": ["semantic", "strict"]
+        },
+        "auto_fix_max_retries": { "type": "integer" },
+        "flows_path": { "type": "string" },
+        "reports_path": { "type": "string" },
+        "states_to_test": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "description": "Optional modular capabilities and infrastructure configurations",
+      "properties": {
+        "release_signing": { "type": "boolean" },
+        "icons_and_splash": { "type": "boolean" },
+        "network_interceptors": { "type": "boolean" },
+        "permissions": {
+          "type": "object",
+          "properties": {
+            "media": { "type": "boolean" },
+            "location": { "type": "boolean" },
+            "notifications": { "type": "boolean" }
+          }
+        },
+        "store_updater": { "type": "boolean" }
+      }
     }
   }
 }

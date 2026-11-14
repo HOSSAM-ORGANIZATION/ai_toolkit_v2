@@ -8,7 +8,13 @@ SHELL := /bin/bash
 test-wizard:
 	python3 bin/wizard/init_profile.py --preset enterprise_clean_bloc --target-dir .
 	./bin/check-profile .
-	rm -f project_profile.yaml
+	rm -rf project_profile.yaml ai_docs ai_specs ai_worklog
+	python3 bin/wizard/init_profile.py --preset moltaqa --single --target-dir .
+	./bin/check-profile .
+	rm -rf project_profile.yaml ai_docs ai_specs ai_worklog
+	python3 bin/wizard/init_profile.py --preset moltaqa --flavors user,provider --target-dir .
+	./bin/check-profile .
+	rm -rf project_profile.yaml ai_docs ai_specs ai_worklog
 
 verify:
 	bash setup/verify-setup.sh

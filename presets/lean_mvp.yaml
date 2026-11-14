@@ -26,6 +26,19 @@ secrets_management:
 living_documentation:
   living_readme: true
   feature_readmes: false
+qa_verification:
+  enabled: false
+  runner: "maestro"
+  device:
+    platform: "android"
+    preferred_avd: "Pixel_7_API_34"
+  tolerance: "semantic"
+  auto_fix_max_retries: 1
+  flows_path: "test/qa_flows"
+  reports_path: "test/qa_reports"
+  states_to_test:
+    - "default"
+    - "error"
 custom_tokens:
   button: "lib/common/widgets/custom_button.dart"
   back_button: "lib/common/widgets/back_icon.dart"

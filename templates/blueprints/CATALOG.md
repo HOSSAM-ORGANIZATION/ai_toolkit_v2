@@ -38,6 +38,7 @@ toolkit add <blueprint_name> [--name CustomName] [--out <path>]
 | `guest_guard` | `lib/common/guards/guest_guard.dart` | Action interceptor checking user authentication; prompts login bottom sheet for guests. |
 | `use_case` | `lib/core/domain/use_case.dart` | Clean Architecture UseCase interface returning `Result<T>` sealed class or Dart 3 Records. |
 | `stepped_wizard` | `lib/common/widgets/stepped_wizard_view.dart` | Multi-step flow controller with step indicator progress bar and navigation transitions. |
+| `chaos_interceptor` / `qa_chaos_interceptor` | `lib/core/network/qa_chaos_interceptor.dart` | Debug-only Dio chaos interceptor for autonomous QA state verification (Loading, Empty, 500, Offline). |
 
 ---
 

@@ -30,6 +30,7 @@ Read each leaf’s **`## Agent card`** (lines 1–60). Do **not** browse indexes
 | `l10n` | Translation keys, directionality, ARB/JSON/Slang | `rules/flutter/design-system-enforcement.md` |
 | `figma` | Figma design analysis, token extraction, RTL | `workflows/product-analysis/design-ingestion.md` |
 | `stitch` | Google Stitch analysis (MCP & Local Folder) | `workflows/product-analysis/design-ingestion.md` |
+| `qa` | Autonomous Maestro flows, screen state & overflow verification | `workflows/qa-verification/autonomous-qa-loop.md` |
 | `codegen` | Build runner, code generation boundaries | `templates/root/Makefile.universal` |
 | `flavors` | Multi-flavor & multi-packaging conventions | `templates/root/Makefile.universal` |
 | `app-memory` | Project-specific living memory and gotchas | `ai_docs/memory.md` (in host application repo) |

@@ -16,8 +16,222 @@ from pathlib import Path
 PRESETS = {
     "1": ("enterprise_clean_bloc", "Enterprise Clean Arch + BLoC + Dio + GetIt + ARB (RTL/LTR)"),
     "2": ("modern_modular_riverpod", "Modern Modular + Riverpod + Retrofit + GoRouter + Slang"),
-    "3": ("lean_mvp", "Lean MVP + Provider/Signals + Http + Easy Localization")
+    "3": ("lean_mvp", "Lean MVP + Provider/Signals + Http + Easy Localization"),
+    "4": ("moltaqa", "Moltaqa Enterprise (Single/Multi-Flavor) + BLoC + Dio + Injectable + ARB RTL")
 }
+
+def detect_flavors_from_dir(target_dir):
+    """Auto-detects active flavors from project structure (main_*.dart, apps/_*_app.dart, launcher icons)."""
+    flavors = []
+    target_path = Path(target_dir)
+    # 1. flutter_launcher_icons-*.yaml
+    for f in target_path.glob("flutter_launcher_icons-*.yaml"):
+        m = re.search(r"flutter_launcher_icons-([a-zA-Z0-9_\-]+)\.yaml", f.name)
+        if m:
+            flavors.append(m.group(1))
+    # 2. main_*.dart
+    lib_dir = target_path / "lib"
+    if lib_dir.exists():
+        for f in lib_dir.glob("main_*.dart"):
+            m = re.search(r"main_([a-zA-Z0-9_\-]+)\.dart", f.name)
+            if m:
+                flavors.append(m.group(1))
+        # 3. lib/apps/_*_app.dart
+        apps_dir = lib_dir / "apps"
+        if apps_dir.exists():
+            for f in apps_dir.glob("_*_app.dart"):
+                m = re.search(r"_([a-zA-Z0-9_\-]+)_app\.dart", f.name)
+                if m:
+                    flavors.append(m.group(1))
+    
+    unique_flavors = []
+    for fl in flavors:
+        if fl not in unique_flavors:
+            unique_flavors.append(fl)
+    return unique_flavors
+
+def apply_topology_to_preset(preset_content, project_type, flavors_list, project_name=None):
+    """Injects dynamic project_type and flavors into a preset YAML string."""
+    content = preset_content
+    # Replace project_type
+    content = re.sub(r'project_type\s*:\s*["\']?[a-zA-Z0-9_\-]+["\']?', f'project_type: "{project_type}"', content)
+    # Replace project_name if provided
+    if project_name:
+        content = re.sub(r'project_name\s*:\s*["\']?[a-zA-Z0-9_\-]+["\']?', f'project_name: "{project_name}"', content)
+    # Replace flavors
+    if project_type == "multi_flavor" and flavors_list:
+        flavors_yaml = "flavors:\n" + "\n".join([f'  - "{fl}"' for fl in flavors_list])
+    else:
+        flavors_yaml = "flavors: []"
+    content = re.sub(r'flavors\s*:\s*(\[\]|(?:\n(?:\s*-\s*[^\n]+)+))', flavors_yaml, content)
+    return content
+
+def resolve_topology_interactive(target_dir, args_single=False, args_flavors=None, prompt_if_interactive=True):
+    """Resolves whether the project is single_app or multi_flavor with specific flavors."""
+    if args_single:
+        return "single_app", []
+    if args_flavors:
+        fls = [f.strip() for f in args_flavors.split(",") if f.strip()]
+        return "multi_flavor", fls
+
+    detected = detect_flavors_from_dir(target_dir)
+
+    # Non-interactive or suppressed prompt
+    if not prompt_if_interactive or not sys.stdin.isatty():
+        if detected:
+            return "multi_flavor", detected
+        return "single_app", []
+
+    print("\n" + "🏢"*35)
+    print("  PROJECT TOPOLOGY & FLAVORS CONFIGURATION")
+    print("🏢"*35)
+    print("  [1] Single App (تطبيق واحد)")
+    print("  [2] 2 Apps / Flavors (e.g. User & Provider)")
+    print("  [3] 3 Apps / Flavors (e.g. User, Provider & Delivery)")
+    if detected:
+        print(f"  [4] Auto-detected from files: {', '.join(detected)}")
+        print("  [5] Custom Flavors (حدد الفليفرز يدوياً)")
+    else:
+        print("  [4] Custom Flavors (حدد الفليفرز يدوياً)")
+
+    choice = input("👉 Select topology [1-4, default: 1]: ").strip()
+    if choice == "2":
+        f_in = input("👉 Enter 2 flavor names [default: user,provider]: ").strip()
+        fls = [f.strip() for f in f_in.split(",")] if f_in else ["user", "provider"]
+        return "multi_flavor", fls
+    elif choice == "3":
+        f_in = input("👉 Enter 3 flavor names [default: user,provider,delivery]: ").strip()
+        fls = [f.strip() for f in f_in.split(",")] if f_in else ["user", "provider", "delivery"]
+        return "multi_flavor", fls
+    elif choice == "4" and detected:
+        return "multi_flavor", detected
+    elif (choice == "4" and not detected) or choice == "5":
+        f_in = input("👉 Enter flavor names separated by comma: ").strip()
+        fls = [f.strip() for f in f_in.split(",") if f.strip()]
+        if fls:
+            return "multi_flavor", fls
+        return "single_app", []
+    else:
+        return "single_app", []
+
+def resolve_capabilities_interactive(args, prompt_if_interactive=False):
+    """Resolves optional capabilities based on CLI flags or interactive questionnaire."""
+    caps = {
+        "release_signing": bool(args.with_signing or args.all_capabilities),
+        "icons_and_splash": bool(args.with_icons_splash or args.all_capabilities),
+        "network_interceptors": bool(args.with_network or args.all_capabilities),
+        "permissions": {
+            "media": False,
+            "location": False,
+            "notifications": False,
+        },
+        "store_updater": bool(args.with_updater or args.all_capabilities)
+    }
+
+    if args.with_permissions:
+        perms = [p.strip().lower() for p in args.with_permissions.split(",")]
+        caps["permissions"]["media"] = "media" in perms or "all" in perms
+        caps["permissions"]["location"] = "location" in perms or "all" in perms
+        caps["permissions"]["notifications"] = "notifications" in perms or "all" in perms
+    elif args.all_capabilities:
+        caps["permissions"]["media"] = True
+        caps["permissions"]["location"] = True
+        caps["permissions"]["notifications"] = True
+
+    if not prompt_if_interactive or not sys.stdin.isatty():
+        return caps
+
+    print("\n" + "🧩"*35)
+    print("  OPTIONAL CAPABILITIES & MODULES")
+    print("🧩"*35)
+    print("  [1] Release Signing Setup (key.properties + Gradle release signing)")
+    print("  [2] Multi-Flavor Icons & Native Splash (YAMLs + Assets directories)")
+    print("  [3] Core Network Interceptors (ApiHeaders + 401 Auto-Logout + Failures)")
+    print("  [4] Mobile Permissions & iOS Podfile (Media, Location, Notifications)")
+    print("  [5] Force Update Engine (StoreUpdater - Version check against server)")
+
+    ans = input("👉 Select capabilities [e.g. 1,2,3 or Enter for none]: ").strip()
+    if ans:
+        selected = [s.strip() for s in ans.replace(" ", ",").split(",") if s.strip()]
+        if "1" in selected: caps["release_signing"] = True
+        if "2" in selected: caps["icons_and_splash"] = True
+        if "3" in selected: caps["network_interceptors"] = True
+        if "5" in selected: caps["store_updater"] = True
+        if "4" in selected:
+            print("\n  📱 Which permissions does this app need?")
+            print("    [1] Media & Camera (الكاميرا واستوديو الصور)")
+            print("    [2] Location (الموقع الجغرافي والخرائط)")
+            print("    [3] Notifications (الإشعارات وخدمات الخلفية)")
+            p_ans = input("  👉 Select [e.g. 1,3 or Enter for none]: ").strip()
+            if p_ans:
+                p_sel = [s.strip() for s in p_ans.replace(" ", ",").split(",") if s.strip()]
+                if "1" in p_sel: caps["permissions"]["media"] = True
+                if "2" in p_sel: caps["permissions"]["location"] = True
+                if "3" in p_sel: caps["permissions"]["notifications"] = True
+
+    return caps
+
+def format_capabilities_yaml(caps):
+    """Formats capabilities dictionary into a clean YAML block."""
+    p = caps.get("permissions", {})
+    return f"""
+# Optional Capabilities & Baseline Infrastructure
+capabilities:
+  release_signing: {str(caps.get('release_signing', False)).lower()}
+  icons_and_splash: {str(caps.get('icons_and_splash', False)).lower()}
+  network_interceptors: {str(caps.get('network_interceptors', False)).lower()}
+  permissions:
+    media: {str(p.get('media', False)).lower()}
+    location: {str(p.get('location', False)).lower()}
+    notifications: {str(p.get('notifications', False)).lower()}
+  store_updater: {str(caps.get('store_updater', False)).lower()}
+"""
+
+def execute_capabilities_setup(target_dir, caps, toolkit_dir):
+    """Executes the setup scripts for each enabled capability."""
+    sys.path.insert(0, str(Path(toolkit_dir) / "bin"))
+
+    if caps.get("release_signing"):
+        try:
+            from setup.setup_signing import setup_signing
+            setup_signing(target_dir)
+        except Exception as e:
+            print(f"⚠️ Signing setup error: {e}")
+
+    if caps.get("icons_and_splash"):
+        try:
+            from setup.setup_icons_splash import setup_icons_and_splash
+            setup_icons_and_splash(target_dir)
+        except Exception as e:
+            print(f"⚠️ Icons/Splash setup error: {e}")
+
+    if caps.get("network_interceptors"):
+        try:
+            from setup.setup_network import setup_network_interceptors
+            setup_network_interceptors(target_dir)
+        except Exception as e:
+            print(f"⚠️ Network setup error: {e}")
+
+    # Permissions
+    perm_cfg = caps.get("permissions", {})
+    active_perms = ["core"]
+    if perm_cfg.get("media"): active_perms.append("media")
+    if perm_cfg.get("location"): active_perms.append("location")
+    if perm_cfg.get("notifications"): active_perms.append("notifications")
+
+    if len(active_perms) > 1 or caps.get("release_signing"):
+        try:
+            from setup.setup_permissions import setup_permissions
+            setup_permissions(target_dir, active_modules=active_perms)
+        except Exception as e:
+            print(f"⚠️ Permissions setup error: {e}")
+
+    if caps.get("store_updater"):
+        try:
+            from setup.setup_updater import setup_store_updater
+            setup_store_updater(target_dir)
+        except Exception as e:
+            print(f"⚠️ Store updater setup error: {e}")
 
 def load_preset(preset_name, toolkit_dir):
     preset_file = Path(toolkit_dir) / "presets" / f"{preset_name}.yaml"
@@ -147,8 +361,18 @@ def ask_question(question, options, default, explanation, ai_recommendation):
 def run_wizard():
     parser = argparse.ArgumentParser(description="Universal AI Toolkit Project Profile Wizard")
     parser.add_argument("--prd", help="Path to PRD or BRD markdown file")
-    parser.add_argument("--preset", help="Preset name (enterprise_clean_bloc, modern_modular_riverpod, lean_mvp)")
+    parser.add_argument("--preset", help="Preset name (enterprise_clean_bloc, modern_modular_riverpod, lean_mvp, moltaqa)")
     parser.add_argument("--target-dir", default=".", help="Target project root directory")
+    parser.add_argument("--single", action="store_true", help="Force single app topology (no flavors)")
+    parser.add_argument("--flavors", help="Comma-separated list of flavors (e.g. user,provider or dev,staging,prod)")
+    parser.add_argument("--sync-deps", action="store_true", help="Automatically sync required packages from pub.dev")
+    parser.add_argument("--setup-flavors", action="store_true", help="Automatically setup Android & iOS flavors")
+    parser.add_argument("--with-signing", action="store_true", help="Setup release signing config")
+    parser.add_argument("--with-icons-splash", action="store_true", help="Setup launcher icons and native splash")
+    parser.add_argument("--with-network", action="store_true", help="Setup core network interceptors and failure mappers")
+    parser.add_argument("--with-permissions", help="Comma-separated permission modules (core, media, location, notifications)")
+    parser.add_argument("--with-updater", action="store_true", help="Setup force store updater service")
+    parser.add_argument("--all-capabilities", action="store_true", help="Enable all optional capabilities")
     args = parser.parse_args()
 
     toolkit_dir = Path(__file__).resolve().parents[2]
@@ -162,11 +386,30 @@ def run_wizard():
     if args.preset:
         content = load_preset(args.preset, toolkit_dir)
         if content:
+            if args.single or args.flavors:
+                proj_type, fl_list = resolve_topology_interactive(target_dir, args.single, args.flavors, prompt_if_interactive=False)
+                final_content = apply_topology_to_preset(content, proj_type, fl_list, project_name=target_dir.name)
+            else:
+                final_content = content
+                fl_match = re.search(r"flavors\s*:\s*\n((?:\s*-\s*[^\n]+\n)+)", content)
+                fl_list = [l.strip().lstrip("-").strip().strip("\"'") for l in fl_match.group(1).splitlines() if l.strip().startswith("-")] if fl_match else []
+                proj_type = "multi_flavor" if fl_list else "single_app"
+
+            # Check CLI capabilities
+            caps = resolve_capabilities_interactive(args, prompt_if_interactive=False)
+            has_caps = any([caps["release_signing"], caps["icons_and_splash"], caps["network_interceptors"], caps["store_updater"], any(caps["permissions"].values())])
+            if has_caps:
+                final_content += format_capabilities_yaml(caps)
+
             out_file = target_dir / "project_profile.yaml"
             with open(out_file, "w", encoding="utf-8") as f:
-                f.write(content)
-            print(f"✅ Created {out_file} using preset '{args.preset}'.")
-            generate_project_scaffolding(target_dir, {"project_name": target_dir.name, "architecture": "feature_first_clean", "state_management": "bloc_cubit", "flavors": []}, toolkit_dir)
+                f.write(final_content)
+
+            if has_caps:
+                execute_capabilities_setup(target_dir, caps, toolkit_dir)
+
+            print(f"✅ Created {out_file} using preset '{args.preset}' (topology: {proj_type}, flavors: {fl_list or 'none'}).")
+            generate_project_scaffolding(target_dir, {"project_name": target_dir.name, "architecture": "feature_first_clean", "state_management": "bloc_cubit", "flavors": fl_list, "project_type": proj_type}, toolkit_dir, sync_deps_flag=args.sync_deps, setup_flavors_flag=args.setup_flavors, prompt_optional=False)
             return
 
     # Check for existing PRD or pubspec
@@ -182,13 +425,38 @@ def run_wizard():
         print("\nAvailable Presets:")
         for k, (name, desc) in PRESETS.items():
             print(f"  [{k}] {desc}")
-        p_choice = input("👉 Select preset [1-3]: ").strip()
+        p_choice = input(f"👉 Select preset [1-{len(PRESETS)}]: ").strip()
         selected_preset = PRESETS.get(p_choice, PRESETS["1"])[0]
         content = load_preset(selected_preset, toolkit_dir)
+
+        customize_top = input("\n❓ Do you want to customize project topology (Single App / Multi-Flavor)? [y/N]: ").strip().lower()
+        if customize_top in ['y', 'yes']:
+            proj_type, fl_list = resolve_topology_interactive(target_dir, args.single, args.flavors, prompt_if_interactive=True)
+            final_content = apply_topology_to_preset(content, proj_type, fl_list, project_name=target_dir.name)
+        else:
+            final_content = content
+            fl_match = re.search(r"flavors\s*:\s*\n((?:\s*-\s*[^\n]+)+)", content)
+            fl_list = [l.strip().lstrip("-").strip().strip("\"'") for l in fl_match.group(1).splitlines() if l.strip().startswith("-")] if fl_match else []
+            proj_type = "multi_flavor" if fl_list else "single_app"
+
+        # Optional capabilities customization
+        customize_caps = input("\n❓ Do you want to configure optional capabilities (Signing, Splash/Icons, Network, Permissions)? [y/N]: ").strip().lower()
+        has_caps = False
+        if customize_caps in ['y', 'yes']:
+            caps = resolve_capabilities_interactive(args, prompt_if_interactive=True)
+            has_caps = any([caps["release_signing"], caps["icons_and_splash"], caps["network_interceptors"], caps["store_updater"], any(caps["permissions"].values())])
+            if has_caps:
+                final_content += format_capabilities_yaml(caps)
+
         out_file = target_dir / "project_profile.yaml"
         with open(out_file, "w", encoding="utf-8") as f:
-            f.write(content)
-        print(f"\n✅ Created {out_file} from preset '{selected_preset}'.")
+            f.write(final_content)
+
+        if has_caps:
+            execute_capabilities_setup(target_dir, caps, toolkit_dir)
+
+        print(f"\n✅ Created {out_file} from preset '{selected_preset}' (topology: {proj_type}, flavors: {fl_list or 'none'}).")
+        generate_project_scaffolding(target_dir, {"project_name": target_dir.name, "architecture": "feature_first_clean", "state_management": "bloc_cubit", "flavors": fl_list, "project_type": proj_type}, toolkit_dir, sync_deps_flag=args.sync_deps, setup_flavors_flag=args.setup_flavors, prompt_optional=True)
         return
 
     # Step-by-step Interactive Mode
@@ -439,6 +707,24 @@ living_documentation:
   living_readme: true
   feature_readmes: true
 
+# Autonomous QA & Verification Engine
+qa_verification:
+  enabled: true
+  runner: "maestro"
+  device:
+    platform: "android"
+    preferred_avd: "Pixel_7_API_34"
+  tolerance: "semantic"
+  auto_fix_max_retries: 3
+  flows_path: "test/qa_flows"
+  reports_path: "test/qa_reports"
+  states_to_test:
+    - "default"
+    - "loading"
+    - "empty"
+    - "error"
+    - "offline"
+
 # Design System Shared Wrappers
 custom_tokens:
   button: "{profile_data['custom_tokens']['button']}"
@@ -448,6 +734,11 @@ custom_tokens:
   text_field: "{profile_data['custom_tokens']['text_field']}"
   loading_widget: "{profile_data['custom_tokens']['loading_widget']}"
 """
+
+    # Resolve optional capabilities
+    caps = resolve_capabilities_interactive(args, prompt_if_interactive=True)
+    if any([caps["release_signing"], caps["icons_and_splash"], caps["network_interceptors"], caps["store_updater"], any(caps["permissions"].values())]):
+        profile_yaml += format_capabilities_yaml(caps)
 
     print("\n" + "📋"*35)
     print("DRAFT PROJECT PROFILE (project_profile.yaml):")
@@ -462,13 +753,16 @@ custom_tokens:
             f.write(profile_yaml)
         print(f"\n🎉 Successfully created {out_file}!")
         print("💡 The project identity is now locked. Workflows will adhere to this specification.")
-        
+
+        if any([caps["release_signing"], caps["icons_and_splash"], caps["network_interceptors"], caps["store_updater"], any(caps["permissions"].values())]):
+            execute_capabilities_setup(target_dir, caps, toolkit_dir)
+
         # Scaffold ai_docs, ai_specs, and ai_worklog
-        generate_project_scaffolding(target_dir, profile_data, toolkit_dir)
+        generate_project_scaffolding(target_dir, profile_data, toolkit_dir, sync_deps_flag=args.sync_deps, setup_flavors_flag=args.setup_flavors, prompt_optional=True)
     else:
         print("\n❌ Cancelled. No changes saved.")
 
-def generate_project_scaffolding(target_dir, profile, toolkit_dir):
+def generate_project_scaffolding(target_dir, profile, toolkit_dir, sync_deps_flag=False, setup_flavors_flag=False, prompt_optional=False):
     """Generates ai_docs, ai_specs, and ai_worklog directories tailored to the project profile."""
     ai_docs = target_dir / "ai_docs"
     ai_specs = target_dir / "ai_specs"
@@ -479,6 +773,9 @@ def generate_project_scaffolding(target_dir, profile, toolkit_dir):
     (ai_specs / "design").mkdir(parents=True, exist_ok=True)
     (ai_specs / "api" / "contracts").mkdir(parents=True, exist_ok=True)
     (ai_worklog / "daily").mkdir(parents=True, exist_ok=True)
+    (target_dir / "test" / "qa_flows").mkdir(parents=True, exist_ok=True)
+    (target_dir / "test" / "qa_reports").mkdir(parents=True, exist_ok=True)
+    (ai_docs / "qa").mkdir(parents=True, exist_ok=True)
 
     templates_dir = Path(toolkit_dir) / "templates" / "app-seed" / "ai_docs"
 
@@ -538,6 +835,41 @@ def generate_project_scaffolding(target_dir, profile, toolkit_dir):
         with open(todos_file, "w", encoding="utf-8") as f:
             f.write(f"# Project Backlog & Open TODOs — {profile.get('project_name')}\n\n## High Priority\n- [ ] Initialize core modules and design tokens\n")
         print("   ✅ Scaffolded ai_worklog/TODOS.md")
+
+    # Auto Package Sync (if pubspec.yaml exists)
+    pubspec_path = target_dir / "pubspec.yaml"
+    if pubspec_path.exists():
+        do_sync = False
+        if sync_deps_flag is True:
+            do_sync = True
+        elif prompt_optional and sys.stdin.isatty():
+            ans = input("\n📦 Would you like to auto-sync required packages from pub.dev now? [Y/n]: ").strip().lower()
+            do_sync = (ans in ['y', 'yes', ''])
+
+        if do_sync:
+            try:
+                sys.path.insert(0, str(Path(toolkit_dir) / "bin"))
+                from deps.sync_packages import sync_packages
+                sync_packages(target_dir)
+            except Exception as e:
+                print(f"⚠️ Package sync error: {e}")
+
+    # Auto Modern Flavors Setup (if multi_flavor)
+    if profile.get("project_type") == "multi_flavor" and profile.get("flavors"):
+        do_flavors = False
+        if setup_flavors_flag is True:
+            do_flavors = True
+        elif prompt_optional and sys.stdin.isatty():
+            ans = input("\n🎨 Would you like to setup Android & iOS flavors now? [Y/n]: ").strip().lower()
+            do_flavors = (ans in ['y', 'yes', ''])
+
+        if do_flavors:
+            try:
+                sys.path.insert(0, str(Path(toolkit_dir) / "bin"))
+                from flavors.setup_flavors import setup_flavors
+                setup_flavors(target_dir)
+            except Exception as e:
+                print(f"⚠️ Flavors setup error: {e}")
 
 if __name__ == "__main__":
     run_wizard()

@@ -27,12 +27,17 @@ Before taking any action in this repository, follow this exact sequence:
 | **Evaluate Screen States & Scenarios** | [`workflows/feature-delivery/screen-states-protocol.md`](workflows/feature-delivery/screen-states-protocol.md) |
 | **Implement a Single Phase** | [`workflows/feature-delivery/implement-phase.md`](workflows/feature-delivery/implement-phase.md) |
 | **Run Autopilot on Remaining Phases** | [`workflows/feature-delivery/autopilot-phases.md`](workflows/feature-delivery/autopilot-phases.md) |
+| **Autonomous QA & Maestro Verification** | [`workflows/qa-verification/autonomous-qa-loop.md`](workflows/qa-verification/autonomous-qa-loop.md) |
 | **Verify Code & Prepare PR** | [`workflows/feature-delivery/verify-and-pr.md`](workflows/feature-delivery/verify-and-pr.md) |
 | **Collaborative Bugfix / Inquiry** | [`workflows/maintenance/collaborative-problem-solving.md`](workflows/maintenance/collaborative-problem-solving.md) |
 | **Backend API Contract Collaboration** | [`workflows/api-analysis/backend-contract.md`](workflows/api-analysis/backend-contract.md) |
 | **Update Daily Worklog & TODOs** | [`workflows/worklog/daily-log.md`](workflows/worklog/daily-log.md) |
+| **Sync Dependencies (pub.dev)** | [`bin/deps/sync_packages.py`](bin/deps/sync_packages.py) |
+| **Setup Flutter Flavors** | [`bin/flavors/setup_flavors.py`](bin/flavors/setup_flavors.py) |
+| **Configure Project Capabilities** | [`bin/setup/`](bin/setup/) |
 | **Split Large Plan Files (< 8KB)** | [`bin/plan-splitter`](bin/plan-splitter) |
 | **Sync Localization Keys (ARB/JSON)** | [`bin/l10n-sync.py`](bin/l10n-sync.py) |
+| **Provision Cloud & App Stores (Firebase, iOS, Android)** | [`bin/setup/setup_cloud.py`](bin/setup/setup_cloud.py) |
 | **Verify Toolkit Integrity** | [`setup/verify-setup.sh`](setup/verify-setup.sh) |
 
 ---

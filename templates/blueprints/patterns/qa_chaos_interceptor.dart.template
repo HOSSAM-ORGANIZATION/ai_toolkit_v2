@@ -1,0 +1,141 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
+
+/// Supported QA chaos injection states for simulating real-world scenarios.
+enum QaChaosType {
+  none,
+  loadingDelay,
+  emptyResponse,
+  serverError,
+  offline,
+  unauthorized,
+}
+
+/// Configuration container for active QA chaos state.
+class QaChaosConfig {
+  static QaChaosType activeType = QaChaosType.none;
+  static Duration simulatedDelay = const Duration(seconds: 4);
+  static int errorCode = 500;
+  static String errorMessage = 'Simulated 500 Internal Server Error (QA Chaos)';
+
+  /// Reset to normal passthrough operation.
+  static void reset() {
+    activeType = QaChaosType.none;
+  }
+
+  /// Initialize state from environment or runtime arguments.
+  static void initFromEnvironment() {
+    const envState = String.fromEnvironment('QA_CHAOS_STATE', defaultValue: 'none');
+    switch (envState.toLowerCase()) {
+      case 'loading':
+      case 'loading_delay':
+        activeType = QaChaosType.loadingDelay;
+        break;
+      case 'empty':
+      case 'empty_response':
+        activeType = QaChaosType.emptyResponse;
+        break;
+      case 'error':
+      case 'error_500':
+        activeType = QaChaosType.serverError;
+        break;
+      case 'offline':
+        activeType = QaChaosType.offline;
+        break;
+      case 'unauthorized':
+      case '401':
+        activeType = QaChaosType.unauthorized;
+        break;
+      default:
+        activeType = QaChaosType.none;
+    }
+  }
+}
+
+/// Debug-only Dio Interceptor to test UI screen states (Loading, Empty, Error, Offline).
+///
+/// Guaranteed zero impact on release builds (`kReleaseMode`).
+class QaChaosInterceptor extends Interceptor {
+  QaChaosInterceptor() {
+    if (kDebugMode) {
+      QaChaosConfig.initFromEnvironment();
+    }
+  }
+
+  @override
+  Future<void> onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    // In Release mode, never intercept or mutate any request
+    if (kReleaseMode) {
+      return handler.next(options);
+    }
+
+    // Check header override first: `x-qa-chaos: loading | empty | error | offline`
+    final headerChaos = options.headers['x-qa-chaos']?.toString().toLowerCase();
+    var currentType = QaChaosConfig.activeType;
+
+    if (headerChaos != null) {
+      if (headerChaos == 'loading') currentType = QaChaosType.loadingDelay;
+      if (headerChaos == 'empty') currentType = QaChaosType.emptyResponse;
+      if (headerChaos == 'error') currentType = QaChaosType.serverError;
+      if (headerChaos == 'offline') currentType = QaChaosType.offline;
+      if (headerChaos == 'unauthorized') currentType = QaChaosType.unauthorized;
+    }
+
+    switch (currentType) {
+      case QaChaosType.none:
+        return handler.next(options);
+
+      case QaChaosType.loadingDelay:
+        await Future.delayed(QaChaosConfig.simulatedDelay);
+        return handler.next(options);
+
+      case QaChaosType.offline:
+        return handler.reject(
+          DioException(
+            requestOptions: options,
+            type: DioExceptionType.connectionError,
+            error: 'Simulated Network Disconnection (QA Chaos)',
+          ),
+        );
+
+      case QaChaosType.unauthorized:
+        return handler.reject(
+          DioException(
+            requestOptions: options,
+            response: Response(
+              requestOptions: options,
+              statusCode: 401,
+              data: {'message': 'Simulated 401 Unauthorized (Session Expired)'},
+            ),
+            type: DioExceptionType.badResponse,
+          ),
+        );
+
+      case QaChaosType.serverError:
+        return handler.reject(
+          DioException(
+            requestOptions: options,
+            response: Response(
+              requestOptions: options,
+              statusCode: QaChaosConfig.errorCode,
+              data: {'message': QaChaosConfig.errorMessage},
+            ),
+            type: DioExceptionType.badResponse,
+          ),
+        );
+
+      case QaChaosType.emptyResponse:
+        return handler.resolve(
+          Response(
+            requestOptions: options,
+            statusCode: 200,
+            data: <dynamic>[], // Empty list simulating empty state
+          ),
+        );
+    }
+  }
+}

@@ -217,6 +217,16 @@ BLUEPRINT_REGISTRY = {
         "lib/common/widgets/stepped_wizard_view.dart",
         "Multi-step flow manager with step progress indicator and validation",
     ),
+    "chaos_interceptor": (
+        "templates/blueprints/patterns/qa_chaos_interceptor.dart.template",
+        "lib/core/network/qa_chaos_interceptor.dart",
+        "Debug-only Dio chaos interceptor for QA state testing (Loading, Empty, 500, Offline)",
+    ),
+    "qa_chaos_interceptor": (
+        "templates/blueprints/patterns/qa_chaos_interceptor.dart.template",
+        "lib/core/network/qa_chaos_interceptor.dart",
+        "Debug-only Dio chaos interceptor for QA state testing (Loading, Empty, 500, Offline)",
+    ),
     "context_ext": (
         "templates/blueprints/utils/context_extensions.dart.template",
         "lib/core/extensions/context_extensions.dart",

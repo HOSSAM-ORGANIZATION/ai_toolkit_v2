@@ -35,6 +35,8 @@ CHECK_PROFILE := ./$(TOOLKIT_DIR)/bin/check-profile
 
 .PHONY: run apk aab ipa \
         get codegen clean analyze format test \
+        qa qa-feature qa-gen qa-status \
+        deps-sync flavors-setup cloud-setup \
         icons splash help \
         toolkit-init toolkit-add toolkit-sync toolkit-pull toolkit-push toolkit-status \
         $(FLAVORS) \
@@ -157,6 +159,45 @@ format:
 test:
 	flutter test
 
+# --- Autonomous QA & Verification -----------------------------------------
+qa:
+	@if [ -x "$(TOOLKIT_BIN)" ]; then $(TOOLKIT_BIN) qa run; \
+	elif [ -f "ai_toolkit/bin/qa/qa_engine.py" ]; then python3 ai_toolkit/bin/qa/qa_engine.py run; \
+	else echo "❌ Toolkit QA runner not found. Run 'make toolkit-add' first."; fi
+
+qa-feature:
+	@test -n "$(FEATURE)" || (echo 'Usage: make qa-feature FEATURE=login' >&2; exit 1)
+	@if [ -x "$(TOOLKIT_BIN)" ]; then $(TOOLKIT_BIN) qa run $(FEATURE); \
+	elif [ -f "ai_toolkit/bin/qa/qa_engine.py" ]; then python3 ai_toolkit/bin/qa/qa_engine.py run $(FEATURE); \
+	else echo "❌ Toolkit QA runner not found. Run 'make toolkit-add' first."; fi
+
+qa-gen:
+	@test -n "$(FEATURE)" || (echo 'Usage: make qa-gen FEATURE=login' >&2; exit 1)
+	@if [ -x "$(TOOLKIT_BIN)" ]; then $(TOOLKIT_BIN) qa gen $(FEATURE); \
+	elif [ -f "ai_toolkit/bin/qa/qa_engine.py" ]; then python3 ai_toolkit/bin/qa/qa_engine.py gen $(FEATURE); \
+	else echo "❌ Toolkit QA runner not found. Run 'make toolkit-add' first."; fi
+
+qa-status:
+	@if [ -x "$(TOOLKIT_BIN)" ]; then $(TOOLKIT_BIN) qa status; \
+	elif [ -f "ai_toolkit/bin/qa/qa_engine.py" ]; then python3 ai_toolkit/bin/qa/qa_engine.py status; \
+	else echo "❌ Toolkit QA runner not found. Run 'make toolkit-add' first."; fi
+
+# --- Package Synchronization & Flavors Setup -------------------------------
+deps-sync:
+	@if [ -x "$(TOOLKIT_BIN)" ]; then $(TOOLKIT_BIN) deps sync; \
+	elif [ -f "ai_toolkit/bin/deps/sync_packages.py" ]; then python3 ai_toolkit/bin/deps/sync_packages.py .; \
+	else echo "❌ Toolkit deps runner not found. Run 'make toolkit-add' first."; fi
+
+flavors-setup:
+	@if [ -x "$(TOOLKIT_BIN)" ]; then $(TOOLKIT_BIN) flavors setup; \
+	elif [ -f "ai_toolkit/bin/flavors/setup_flavors.py" ]; then python3 ai_toolkit/bin/flavors/setup_flavors.py .; \
+	else echo "❌ Toolkit flavors runner not found. Run 'make toolkit-add' first."; fi
+
+cloud-setup:
+	@if [ -x "$(TOOLKIT_BIN)" ]; then $(TOOLKIT_BIN) cloud $(ARGS); \
+	elif [ -f "ai_toolkit/bin/setup/setup_cloud.py" ]; then python3 ai_toolkit/bin/setup/setup_cloud.py $(ARGS); \
+	else echo "❌ Toolkit cloud runner not found. Run 'make toolkit-add' first."; fi
+
 # --- Universal AI Toolkit Lifecycle ---------------------------------------
 toolkit-init:
 	@if [ -f "$(TOOLKIT_DIR)/bin/wizard/init_profile.py" ]; then \
@@ -213,8 +254,13 @@ help:
 	@echo "  make analyze    - Run Flutter static analyzer"
 	@echo "  make format     - Format Dart code"
 	@echo "  make test       - Execute test suite"
+	@echo "  make qa         - Run autonomous QA & Maestro verification suite"
+	@echo "  make qa-feature FEATURE=name - Run QA on specific feature"
+	@echo "  make qa-gen FEATURE=name     - Generate Maestro flow for feature"
+	@echo "  make qa-status  - Check QA tooling and emulator readiness"
 	@echo "  make icons      - Generate app icons (flavor-aware)"
 	@echo "  make splash     - Generate splash screens (flavor-aware)"
+	@echo "  make cloud-setup [ARGS=\"...\"] - Provision Firebase, App Store, and Play Store readiness"
 	@echo ""
 	@echo "AI Toolkit management:"
 	@echo "  make toolkit-init   - Launch interactive project profile wizard"

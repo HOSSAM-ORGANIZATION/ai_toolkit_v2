@@ -18,7 +18,7 @@ else
   ERRORS=$((ERRORS + 1))
 fi
 
-for preset in enterprise_clean_bloc modern_modular_riverpod lean_mvp; do
+for preset in enterprise_clean_bloc modern_modular_riverpod lean_mvp moltaqa; do
   if [ -f "$TOOLKIT_DIR/presets/${preset}.yaml" ]; then
     echo "✅ Preset verified: $preset"
   else
@@ -28,7 +28,7 @@ for preset in enterprise_clean_bloc modern_modular_riverpod lean_mvp; do
 done
 
 # 2. Check Core Bin Executables
-for b in toolkit check-profile plan-splitter l10n-sync.py toolkit-context.py wizard/init_profile.py scaffolder/add_blueprint.py; do
+for b in toolkit check-profile plan-splitter l10n-sync.py toolkit-context.py wizard/init_profile.py scaffolder/add_blueprint.py qa/qa_engine.py deps/sync_packages.py flavors/setup_flavors.py setup/setup_signing.py setup/setup_icons_splash.py setup/setup_permissions.py setup/setup_network.py setup/setup_updater.py setup/setup_cloud.py; do
   if [ -x "$TOOLKIT_DIR/bin/$b" ]; then
     echo "✅ Executable tool verified: bin/$b"
   else
@@ -42,6 +42,22 @@ if [ -f "$TOOLKIT_DIR/templates/blueprints/CATALOG.md" ]; then
   echo "✅ Blueprints catalog verified (CATALOG.md)"
 else
   echo "❌ Missing templates/blueprints/CATALOG.md"
+  ERRORS=$((ERRORS + 1))
+fi
+
+# Check Moltaqa Enterprise Signing & Apple APNs Assets
+if [ -f "$TOOLKIT_DIR/templates/signing/moltaqa/key.properties" ] && [ -f "$TOOLKIT_DIR/templates/signing/moltaqa/upload-keystore.jks" ] && [ -f "$TOOLKIT_DIR/templates/signing/moltaqa/apple/AuthKey_4A9WV94BJ9.p8" ]; then
+  echo "✅ Moltaqa enterprise signing (Keystore & Apple APNs) verified"
+else
+  echo "⚠️ Moltaqa enterprise signing assets incomplete"
+  WARNINGS=$((WARNINGS + 1))
+fi
+
+# Check Android ProGuard template
+if [ -f "$TOOLKIT_DIR/templates/android/proguard-rules.pro" ]; then
+  echo "✅ Android ProGuard/R8 template verified (proguard-rules.pro)"
+else
+  echo "❌ Missing templates/android/proguard-rules.pro"
   ERRORS=$((ERRORS + 1))
 fi
 
@@ -74,6 +90,7 @@ for wf in session/bootstrap-session.md \
           feature-delivery/autopilot-phases.md \
           feature-delivery/screen-states-protocol.md \
           product-analysis/design-ingestion.md \
+          qa-verification/autonomous-qa-loop.md \
           maintenance/collaborative-problem-solving.md \
           maintenance/bugfix.md; do
   if [ -f "$TOOLKIT_DIR/workflows/$wf" ]; then

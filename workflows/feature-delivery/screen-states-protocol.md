@@ -46,3 +46,16 @@ Developers and product managers frequently forget defensive scenarios. The AI ag
 ### Scenario 5: Session Expiry (401 Unauthorized)
 - *Question:* How should this screen react if the user's auth token expires mid-action?
 - *Standard Implementation:* Trigger global `unauthenticated` interceptor to show a login bottom sheet or redirect without crashing.
+
+---
+
+## 3. Automated State & Chaos Verification
+
+Don't rely solely on manual code checks. Verify the state matrix on a real emulator:
+1. Generate the declarative flow: `toolkit qa gen <feature>`
+2. Execute the verification suite: `toolkit qa run <feature>`
+3. For backend chaos testing (delay, 500, empty, offline), install the chaos interceptor:
+   ```bash
+   toolkit add chaos_interceptor
+   ```
+For complete details, see [`workflows/qa-verification/autonomous-qa-loop.md`](../qa-verification/autonomous-qa-loop.md).
