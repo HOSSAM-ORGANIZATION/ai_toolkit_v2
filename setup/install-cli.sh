@@ -6,7 +6,7 @@
 
 set -e
 
-REPO_URL="${TOOLKIT_REPO:-https://github.com/hossammo-dev/ai_toolkit_v2.git}"
+REPO_URL="${TOOLKIT_REPO:-https://github.com/HOSSAM-ORGANIZATION/ai_toolkit_v2.git}"
 INSTALL_DIR="$HOME/.ai_toolkit"
 BIN_DIR="$HOME/.local/bin"
 

@@ -27,8 +27,8 @@ FLAVORS ?= $(DETECTED_FLAVORS)
 # Selected flavor for multi-flavor commands (e.g. `make user run`)
 FLAVOR ?= $(firstword $(filter $(FLAVORS),$(MAKECMDGOALS)))
 
-# Submodule configuration (Customize to your private/org repo)
-TOOLKIT_REPO ?= git@github.com:your-org/ai_toolkit_v2.git
+# Submodule configuration
+TOOLKIT_REPO ?= https://github.com/HOSSAM-ORGANIZATION/ai_toolkit_v2.git
 TOOLKIT_DIR  ?= ai_toolkit
 TOOLKIT_BIN  := ./$(TOOLKIT_DIR)/bin/toolkit
 CHECK_PROFILE := ./$(TOOLKIT_DIR)/bin/check-profile
