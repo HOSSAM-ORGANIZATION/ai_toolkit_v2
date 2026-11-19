@@ -10,6 +10,7 @@ import sys
 import os
 import re
 import argparse
+import subprocess
 from pathlib import Path
 
 # Granular definitions
@@ -107,7 +108,133 @@ MODULES = {
     }
 }
 
-def setup_permissions(target_dir=".", active_modules=None, live_tracking=False, maps_api_key=None, deep_link_domain=None):
+def extract_sha256_fingerprints(target_path: Path):
+    """
+    Attempts to extract SHA-256 certificate fingerprints using `./gradlew signingReport`.
+    Works across macOS, Linux, and Windows.
+    """
+    results = {
+        "debug": None,
+        "release": None,
+        "all": []
+    }
+    android_dir = target_path / "android"
+    if not android_dir.exists():
+        return results
+
+    gradlew_bin = android_dir / ("gradlew.bat" if os.name == "nt" else "gradlew")
+    if not gradlew_bin.exists():
+        return results
+
+    try:
+        if os.name != "nt":
+            os.chmod(gradlew_bin, 0o755)
+
+        proc = subprocess.run(
+            [str(gradlew_bin.resolve()), "signingReport"],
+            cwd=str(android_dir),
+            capture_output=True,
+            text=True,
+            timeout=45
+        )
+        output = proc.stdout or ""
+
+        # Parse variants
+        blocks = re.split(r'-{5,}', output)
+        for b in blocks:
+            v_match = re.search(r'Variant:\s*([a-zA-Z0-9_]+)', b)
+            sha_match = re.search(r'SHA-256:\s*([0-9A-F:]{50,})', b, re.IGNORECASE)
+            if sha_match:
+                sha_val = sha_match.group(1).strip().upper()
+                if sha_val not in results["all"]:
+                    results["all"].append(sha_val)
+                if v_match:
+                    var_name = v_match.group(1).lower()
+                    if "debug" in var_name and not results["debug"]:
+                        results["debug"] = sha_val
+                    elif "release" in var_name and not results["release"]:
+                        results["release"] = sha_val
+    except Exception:
+        pass
+
+    return results
+
+def detect_app_identifiers(target_path: Path):
+    """Auto-detects package name (Android), bundle ID (iOS), and Apple Team ID."""
+    info = {
+        "package_name": "app-package-name",
+        "bundle_id": "app-bundle-id",
+        "team_id": "team-id",
+    }
+
+    # 1. Check project_profile.yaml
+    profile_path = target_path / "project_profile.yaml"
+    if profile_path.exists():
+        try:
+            with open(profile_path, "r", encoding="utf-8") as f:
+                content = f.read()
+                m_pkg = re.search(r'(?:android_package|package_name)\s*:\s*["\']?([^"\'\n]+)["\']?', content)
+                if m_pkg: info["package_name"] = m_pkg.group(1).strip()
+                m_bid = re.search(r'(?:ios_bundle_id|bundle_id)\s*:\s*["\']?([^"\'\n]+)["\']?', content)
+                if m_bid: info["bundle_id"] = m_bid.group(1).strip()
+                m_tid = re.search(r'(?:apple_team_id|team_id)\s*:\s*["\']?([^"\'\n]+)["\']?', content)
+                if m_tid: info["team_id"] = m_tid.group(1).strip()
+        except Exception:
+            pass
+
+    # 2. Check Android gradle (build.gradle.kts or build.gradle)
+    for g_path in [target_path / "android" / "app" / "build.gradle.kts", target_path / "android" / "app" / "build.gradle"]:
+        if g_path.exists():
+            try:
+                with open(g_path, "r", encoding="utf-8") as f:
+                    txt = f.read()
+                    m_ns = re.search(r'(?:namespace|applicationId)\s*[=\s]\s*["\']([^"\']+)["\']', txt)
+                    if m_ns and info["package_name"] == "app-package-name":
+                        info["package_name"] = m_ns.group(1).strip()
+                        break
+            except Exception:
+                pass
+
+    # 3. Check AndroidManifest.xml package attribute
+    manifest_path = target_path / "android" / "app" / "src" / "main" / "AndroidManifest.xml"
+    if manifest_path.exists() and info["package_name"] == "app-package-name":
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                m_man = re.search(r'package\s*=\s*["\']([^"\']+)["\']', f.read())
+                if m_man: info["package_name"] = m_man.group(1).strip()
+        except Exception:
+            pass
+
+    # 4. Check iOS project.pbxproj
+    pbxproj = target_path / "ios" / "Runner.xcodeproj" / "project.pbxproj"
+    if pbxproj.exists():
+        try:
+            with open(pbxproj, "r", encoding="utf-8") as f:
+                txt = f.read()
+                if info["bundle_id"] == "app-bundle-id":
+                    m_bid = re.search(r'PRODUCT_BUNDLE_IDENTIFIER\s*=\s*([^;]+);', txt)
+                    if m_bid:
+                        bid = m_bid.group(1).strip().strip('"\'')
+                        if bid and not bid.startswith("$("):
+                            info["bundle_id"] = bid
+                if info["team_id"] == "team-id":
+                    m_team = re.search(r'DEVELOPMENT_TEAM\s*=\s*([^;]+);', txt)
+                    if m_team:
+                        tid = m_team.group(1).strip().strip('"\'')
+                        if tid and tid != '""':
+                            info["team_id"] = tid
+        except Exception:
+            pass
+
+    # Fallback sync between bundle_id and package_name if one was found and other wasn't
+    if info["bundle_id"] == "app-bundle-id" and info["package_name"] != "app-package-name":
+        info["bundle_id"] = info["package_name"]
+    elif info["package_name"] == "app-package-name" and info["bundle_id"] != "app-bundle-id":
+        info["package_name"] = info["bundle_id"]
+
+    return info
+
+def setup_permissions(target_dir=".", active_modules=None, live_tracking=False, maps_api_key=None, deep_link_domain=None, package_name=None, bundle_id=None, team_id=None):
     target_path = Path(target_dir).resolve()
     android_manifest = target_path / "android" / "app" / "src" / "main" / "AndroidManifest.xml"
     ios_plist = target_path / "ios" / "Runner" / "Info.plist"
@@ -150,6 +277,26 @@ def setup_permissions(target_dir=".", active_modules=None, live_tracking=False, 
             d_input = input("   Enter your domain [e.g. example.com or press Enter to leave empty]: ").strip()
             deep_link_domain = d_input
 
+            detected = detect_app_identifiers(target_path)
+            
+            p_in = input(f"   Enter Android Package Name [press Enter for '{detected['package_name']}']: ").strip()
+            package_name = p_in if p_in else detected["package_name"]
+
+            b_in = input(f"   Enter iOS Bundle ID [press Enter for '{detected['bundle_id']}']: ").strip()
+            bundle_id = b_in if b_in else detected["bundle_id"]
+
+            t_in = input(f"   Enter Apple Team ID [press Enter for '{detected['team_id']}']: ").strip()
+            team_id = t_in if t_in else detected["team_id"]
+
+    # Resolve app identifiers if not already resolved
+    detected_info = detect_app_identifiers(target_path)
+    if not package_name:
+        package_name = detected_info["package_name"]
+    if not bundle_id:
+        bundle_id = detected_info["bundle_id"]
+    if not team_id:
+        team_id = detected_info["team_id"]
+
     # Core is always included
     if "core" not in active_modules:
         active_modules.insert(0, "core")
@@ -171,6 +318,9 @@ def setup_permissions(target_dir=".", active_modules=None, live_tracking=False, 
     if deep_link_domain is not None:
         domain_display = deep_link_domain if deep_link_domain else "(empty)"
         print(f"🔗 Deep Linking Domain: {domain_display}")
+        print(f"📦 Package Name: {package_name}")
+        print(f"🍎 iOS Bundle ID: {bundle_id}")
+        print(f"👥 Apple Team ID: {team_id}")
 
     # 1. Update AndroidManifest.xml
     if not android_manifest.exists() and (target_path / "android").exists():
@@ -251,6 +401,73 @@ def setup_permissions(target_dir=".", active_modules=None, live_tracking=False, 
         with open(android_manifest, "w", encoding="utf-8") as f:
             f.write(m_content)
         print(f"   ✅ Updated AndroidManifest.xml with {total_added} permissions & <queries>")
+
+        # Generate deeplink-assets/ folder with assetlinks.json and apple-app-site-association
+        if deep_link_domain is not None:
+            deeplink_dir = target_path / "deeplink-assets"
+            deeplink_dir.mkdir(parents=True, exist_ok=True)
+
+            # Auto-infer SHA-256 fingerprints via `./gradlew signingReport`
+            extracted_shas = extract_sha256_fingerprints(target_path)
+            shas = []
+            if extracted_shas["all"]:
+                shas.extend(extracted_shas["all"])
+                if "play-store-release" not in shas:
+                    shas.append("play-store-release")
+                print(f"   🔑 Inferred {len(extracted_shas['all'])} SHA-256 fingerprint(s) via ./gradlew signingReport")
+            else:
+                shas = [
+                    "device-release",
+                    "play-store-release",
+                    "device-debug"
+                ]
+
+            sha_json_lines = ",\n        ".join([f'"{s}"' for s in shas])
+
+            assetlinks_content = f"""[
+  {{
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {{
+      "namespace": "android_app",
+      "package_name": "{package_name}",
+      "sha256_cert_fingerprints": [
+        {sha_json_lines}
+      ]
+    }}
+  }}
+]
+"""
+            apple_site_assoc = f"""{{
+  "applinks": {{
+    "apps": [],
+    "details": [
+      {{
+        "appIDs": [
+          "{team_id}.{bundle_id}"
+        ],
+        "paths": [
+          "*"
+        ],
+        "components": [
+          {{
+            "/": "/*"
+          }}
+        ]
+      }}
+    ]
+  }},
+  "webcredentials": {{
+    "apps": [
+      "{team_id}.{bundle_id}"
+    ]
+  }}
+}}
+"""
+            with open(deeplink_dir / "assetlinks.json", "w", encoding="utf-8") as f:
+                f.write(assetlinks_content)
+            with open(deeplink_dir / "apple-app-site-association", "w", encoding="utf-8") as f:
+                f.write(apple_site_assoc)
+            print("   ✅ Generated deeplink-assets/assetlinks.json & apple-app-site-association")
 
     # 2. Update Info.plist
     if ios_plist.exists():
@@ -359,6 +576,9 @@ if __name__ == "__main__":
     parser.add_argument("--live-tracking", action="store_true", help="Enable background live tracking permissions")
     parser.add_argument("--maps-key", help="Google Maps API Key")
     parser.add_argument("--deep-link-domain", help="Deep linking domain (e.g. pays-you.com)")
+    parser.add_argument("--package-name", help="Android Package Name")
+    parser.add_argument("--bundle-id", help="iOS Bundle ID")
+    parser.add_argument("--team-id", help="Apple Team ID")
     args = parser.parse_args()
 
     setup_permissions(
@@ -366,5 +586,8 @@ if __name__ == "__main__":
         active_modules=args.modules,
         live_tracking=args.live_tracking,
         maps_api_key=args.maps_key,
-        deep_link_domain=args.deep_link_domain
+        deep_link_domain=args.deep_link_domain,
+        package_name=args.package_name,
+        bundle_id=args.bundle_id,
+        team_id=args.team_id
     )
