@@ -15,47 +15,59 @@ from pathlib import Path
 # Granular definitions
 MODULES = {
     "core": {
+        "section_header": "<!-- INTERNET AND NETWORK -->",
+        "section_footer": None,
         "android_permissions": [
             '<uses-permission android:name="android.permission.INTERNET" />',
             '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />'
         ],
         "android_queries": """    <queries>
         <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="https" />
+            <action android:name="android.intent.action.PROCESS_TEXT" />
+            <data android:mimeType="text/plain" />
         </intent>
+        <!-- If your app checks for SMS support -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="sms" />
+        </intent>
+        <!-- If your app checks for call support -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="tel" />
         </intent>
+        <!-- If your application checks for inAppBrowserView launch mode support -->
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="sms" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
         </intent>
     </queries>""",
         "ios_plist": {},
         "podfile_macros": []
     },
-    "media": {
+    "notifications": {
+        "section_header": "<!-- NOTIFICATION PERMISSION START -->",
+        "section_footer": "<!-- NOTIFICATION PERMISSION END -->",
         "android_permissions": [
-            '<uses-permission android:name="android.permission.CAMERA" />',
-            '<uses-permission android:name="android.permission.RECORD_AUDIO" />',
-            '<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />',
-            '<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />',
-            '<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />'
+            '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
+            '<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />',
+            '<uses-permission android:name="android.permission.VIBRATE" />'
         ],
         "android_queries": None,
-        "ios_plist": {
-            "NSCameraUsageDescription": "App requires access to the camera to capture photos and profile pictures.",
-            "NSMicrophoneUsageDescription": "App requires access to the microphone for audio and video recording.",
-            "NSPhotoLibraryUsageDescription": "App requires access to your photo library to select images and media."
-        },
-        "podfile_macros": ["PERMISSION_CAMERA=1", "PERMISSION_MICROPHONE=1", "PERMISSION_PHOTOS=1"]
+        "ios_plist": {},
+        "podfile_macros": ["PERMISSION_NOTIFICATIONS=1"]
     },
     "location": {
+        "section_header": "<!-- LOCATION PERMISSION START -->",
+        "section_footer": "<!-- LOCATION PERMISSION END -->",
         "android_permissions": [
             '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />',
-            '<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />'
+            '<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />',
+            '<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />'
         ],
         "android_queries": None,
         "ios_plist": {
@@ -64,15 +76,22 @@ MODULES = {
         },
         "podfile_macros": ["PERMISSION_LOCATION=1"]
     },
-    "notifications": {
+    "media": {
+        "section_header": "<!-- CAMERA & AUDIO (CHAT / QR / ATTACHMENTS) PERMISSION START -->",
+        "section_footer": "<!-- CAMERA & AUDIO (CHAT / QR / ATTACHMENTS) PERMISSION END -->",
         "android_permissions": [
-            '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
-            '<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />',
-            '<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />'
+            '<uses-permission android:name="android.permission.CAMERA" />',
+            '<uses-permission android:name="android.permission.RECORD_AUDIO" />',
+            '<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />',
+            '<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />'
         ],
         "android_queries": None,
-        "ios_plist": {},
-        "podfile_macros": ["PERMISSION_NOTIFICATIONS=1"]
+        "ios_plist": {
+            "NSCameraUsageDescription": "App requires access to the camera to scan QR codes and capture photos.",
+            "NSMicrophoneUsageDescription": "App requires access to the microphone for recording audio and voice notes in chat.",
+            "NSPhotoLibraryUsageDescription": "App requires access to your photo library to select images and chat attachments."
+        },
+        "podfile_macros": ["PERMISSION_CAMERA=1", "PERMISSION_MICROPHONE=1", "PERMISSION_PHOTOS=1"]
     }
 }
 
@@ -86,6 +105,20 @@ def setup_permissions(target_dir=".", active_modules=None):
         active_modules = ["core"]
     elif isinstance(active_modules, str):
         active_modules = [m.strip().lower() for m in active_modules.split(",") if m.strip()]
+
+    # Interactive prompt if only core or unspecified and run in terminal
+    if (active_modules == ["core"]) and sys.stdin.isatty():
+        print("\n  📱 Select which optional permission modules to configure:")
+        print("    [1] Camera & Audio / Chat & QR (الكاميرا والمايك للشات، الملاحظات الصوتية ومسح QR)")
+        print("    [2] Location (الموقع الجغرافي والخرائط)")
+        print("    [3] Notifications (الإشعارات والتنبيهات)")
+        ans = input("  👉 Select [e.g. 1,3 or Enter for core network only]: ").strip()
+        if ans:
+            active_modules = ["core"]
+            sel = [s.strip() for s in ans.replace(" ", ",").split(",") if s.strip()]
+            if "1" in sel: active_modules.append("media")
+            if "2" in sel: active_modules.append("location")
+            if "3" in sel: active_modules.append("notifications")
 
     # Core is always included
     if "core" not in active_modules:
@@ -107,16 +140,30 @@ def setup_permissions(target_dir=".", active_modules=None):
         with open(android_manifest, "r", encoding="utf-8") as f:
             m_content = f.read()
 
-        added_perms = []
+        total_added = 0
+        section_blocks = []
         for mod in active_modules:
             if mod in MODULES:
+                needed = []
                 for perm in MODULES[mod]["android_permissions"]:
                     m_perm = re.search(r'android:name="([^"]+)"', perm)
                     if m_perm and m_perm.group(1) not in m_content:
-                        added_perms.append(perm)
+                        needed.append(perm)
+                        total_added += 1
 
-        if added_perms:
-            perms_text = "\n    " + "\n    ".join(added_perms)
+                if needed:
+                    lines = []
+                    header = MODULES[mod].get("section_header")
+                    footer = MODULES[mod].get("section_footer")
+                    if header and header not in m_content:
+                        lines.append(header)
+                    lines.extend(needed)
+                    if footer and footer not in m_content:
+                        lines.append(footer)
+                    section_blocks.append("\n    ".join(lines))
+
+        if section_blocks:
+            perms_text = "\n\n    " + "\n\n    ".join(section_blocks)
             m_content = re.sub(r"(<manifest[^\>]*\>)", r"\1" + perms_text, m_content, count=1)
 
         # Queries
@@ -126,7 +173,7 @@ def setup_permissions(target_dir=".", active_modules=None):
 
         with open(android_manifest, "w", encoding="utf-8") as f:
             f.write(m_content)
-        print(f"   ✅ Updated AndroidManifest.xml with {len(added_perms)} permissions & <queries>")
+        print(f"   ✅ Updated AndroidManifest.xml with {total_added} permissions & <queries>")
 
     # 2. Update Info.plist
     if ios_plist.exists():

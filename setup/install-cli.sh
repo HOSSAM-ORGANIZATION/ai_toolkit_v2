@@ -2,7 +2,7 @@
 # Universal AI Toolkit v2 — One-Line Cloud Installer
 # Installs or updates the toolkit CLI globally on any macOS/Linux machine.
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/<USER>/<REPO>/main/setup/install-cli.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/HOSSAM-ORGANIZATION/ai_toolkit_v2/main/setup/install-cli.sh | bash
 
 set -e
 

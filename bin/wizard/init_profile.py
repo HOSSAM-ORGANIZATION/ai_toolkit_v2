@@ -159,9 +159,9 @@ def resolve_capabilities_interactive(args, prompt_if_interactive=False):
         if "5" in selected: caps["store_updater"] = True
         if "4" in selected:
             print("\n  📱 Which permissions does this app need?")
-            print("    [1] Media & Camera (الكاميرا واستوديو الصور)")
+            print("    [1] Camera & Audio / Chat & QR (الكاميرا والمايك للشات، الملاحظات الصوتية، ومسح الـ QR)")
             print("    [2] Location (الموقع الجغرافي والخرائط)")
-            print("    [3] Notifications (الإشعارات وخدمات الخلفية)")
+            print("    [3] Notifications (الإشعارات والتنبيهات)")
             p_ans = input("  👉 Select [e.g. 1,3 or Enter for none]: ").strip()
             if p_ans:
                 p_sel = [s.strip() for s in p_ans.replace(" ", ",").split(",") if s.strip()]

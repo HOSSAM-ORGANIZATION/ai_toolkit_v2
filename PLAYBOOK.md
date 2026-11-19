@@ -30,7 +30,7 @@ git status || git init
 ### [ ] الخطوة 0.2: تشغيل أمر الإعداد السريع (Quickstart) `[إجباري / MANDATORY]`
 اربط الـ Toolkit كـ Submodule ونفذ أمر الإعداد الشامل بضغطة واحدة:
 ```bash
-git submodule add <TOOLKIT_REPO_URL> ai_toolkit && bash ai_toolkit/setup/quickstart.sh
+git submodule add https://github.com/HOSSAM-ORGANIZATION/ai_toolkit_v2.git ai_toolkit && bash ai_toolkit/setup/quickstart.sh
 ```
 *ما يتم تلقائياً:* نسخ الـ Makefile، تفعيل `./toolkit`، وتثبيت قواعد IDE للـ AI في `.cursor/rules` و `CLAUDE.md`.
 

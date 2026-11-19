@@ -58,7 +58,7 @@ Keeps the toolkit synchronized with its upstream repository so your project rece
 
 ```bash
 # In your host project root:
-git submodule add https://github.com/<ORG>/ai_toolkit_v2.git ai_toolkit
+git submodule add https://github.com/HOSSAM-ORGANIZATION/ai_toolkit_v2.git ai_toolkit
 bash ai_toolkit/setup/quickstart.sh
 ```
 
@@ -74,7 +74,7 @@ bash ai_toolkit/setup/quickstart.sh
 Install the `toolkit` binary globally on macOS/Linux:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<ORG>/ai_toolkit_v2/main/setup/install-cli.sh | bash
+curl -fsSL https://raw.githubusercontent.com/HOSSAM-ORGANIZATION/ai_toolkit_v2/main/setup/install-cli.sh | bash
 ```
 
 Once installed globally, you can initialize any project simply with:
@@ -88,7 +88,7 @@ toolkit setup
 
 ```bash
 # 1. Clone toolkit into your project
-git submodule add https://github.com/<ORG>/ai_toolkit_v2.git ai_toolkit
+git submodule add https://github.com/HOSSAM-ORGANIZATION/ai_toolkit_v2.git ai_toolkit
 
 # 2. Deploy IDE rules & exclusion filters
 bash ai_toolkit/setup/install.sh

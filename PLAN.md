@@ -161,7 +161,7 @@ flowchart LR
   - Handle single-app mode (no flavor required; `make run`, `make build` work directly without flavor prompts).
   - Handle multi-flavor & multi-packaging modes (`make <flavor> run`, `make <flavor>-apk`, etc.).
 - [x] **Task 2.2: Configurable Remote Submodule Targets**
-  - Parametrize `TOOLKIT_REPO ?= git@github.com:<your-org>/ai_toolkit_v2.git`.
+  - Parametrize `TOOLKIT_REPO ?= https://github.com/HOSSAM-ORGANIZATION/ai_toolkit_v2.git`.
   - Provide targets: `toolkit-add`, `toolkit-sync`, `toolkit-pull`, `toolkit-push`, `toolkit-status`.
 - [x] **Task 2.3: Core Lifecycle Helpers**
   - `make get`: Run package resolution (`flutter pub get` or monorepo workspace equivalent).

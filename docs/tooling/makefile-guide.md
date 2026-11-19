@@ -31,7 +31,7 @@ If `project_profile.yaml` is absent or incomplete:
 
 Configure your custom repository remote:
 ```makefile
-TOOLKIT_REPO ?= git@github.com:<your-org>/ai_toolkit_v2.git
+TOOLKIT_REPO ?= https://github.com/HOSSAM-ORGANIZATION/ai_toolkit_v2.git
 ```
 
 Targets:
