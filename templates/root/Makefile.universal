@@ -9,18 +9,7 @@ SHELL := /bin/bash
 PROFILE_FILE := project_profile.yaml
 
 # Extract flavors from project_profile.yaml if present
-DETECTED_FLAVORS := $(shell [ -f "$(PROFILE_FILE)" ] && python3 -c '
-import re
-try:
-    with open("$(PROFILE_FILE)", "r", encoding="utf-8") as f:
-        content = f.read()
-    match = re.search(r"flavors\s*:\s*\n((?:\s*-\s*[^\n]+\n)+)", content)
-    if match:
-        fls = [line.strip().lstrip("-").strip().strip("\"'\") for line in match.group(1).splitlines() if line.strip().startswith("-")]
-        print(" ".join(fls))
-except:
-    pass
-' 2>/dev/null)
+DETECTED_FLAVORS := $(shell [ -f "$(PROFILE_FILE)" ] && python3 -c "import re; f=open('$(PROFILE_FILE)').read(); m=re.search(r'flavors:\s*\n((?:\s*-\s*[^\n]+\n)+)', f); print(' '.join([l.strip().lstrip('-').strip().strip('\"\'') for l in m.group(1).splitlines() if l.strip().startswith('-')])) if m else None" 2>/dev/null)
 
 FLAVORS ?= $(DETECTED_FLAVORS)
 
