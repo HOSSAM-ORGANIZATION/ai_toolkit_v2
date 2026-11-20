@@ -27,6 +27,8 @@ Core Commands:
   signing                              Configure Android keystore and release signing
   icons-splash                         Configure launcher icons & native splash for all flavors
   l10n <SUBCOMMAND>                    Sync and update ARB / JSON / Slang translations
+  fonts [options]                      Setup, match, or provision fonts (cairo, inter, custom)
+  pulse / sync-state                   Audit features, rotate plan to history, and sync living memory
   qa <run|gen|status> [FEATURE]        Autonomous QA, Maestro flows & UI verification
   verify                               Verify integrity of toolkit rules, links, and templates
 
@@ -114,6 +116,12 @@ case "$cmd" in
     ;;
   l10n)
     python3 "$TOOLKIT_DIR/bin/l10n-sync.py" "$@"
+    ;;
+  fonts)
+    python3 "$TOOLKIT_DIR/bin/setup/setup_fonts.py" "$@"
+    ;;
+  pulse|sync-state)
+    python3 "$TOOLKIT_DIR/bin/sync/project_pulse.py" "$@"
     ;;
   qa)
     python3 "$TOOLKIT_DIR/bin/qa/qa_engine.py" "$@"

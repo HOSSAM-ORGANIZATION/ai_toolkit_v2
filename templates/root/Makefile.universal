@@ -36,6 +36,7 @@ CHECK_PROFILE := ./$(TOOLKIT_DIR)/bin/check-profile
 .PHONY: run apk aab ipa \
         get codegen clean analyze format test \
         qa qa-feature qa-gen qa-status \
+        pulse sync-state fonts fonts-setup font-custom \
         deps-sync flavors-setup cloud-setup \
         icons splash help \
         toolkit-init toolkit-add toolkit-sync toolkit-pull toolkit-push toolkit-status \
@@ -182,6 +183,34 @@ qa-status:
 	elif [ -f "ai_toolkit/bin/qa/qa_engine.py" ]; then python3 ai_toolkit/bin/qa/qa_engine.py status; \
 	else echo "❌ Toolkit QA runner not found. Run 'make toolkit-add' first."; fi
 
+# --- Project Pulse & Living Memory Sync ------------------------------------
+pulse sync-state:
+	@if [ -x "$(TOOLKIT_BIN)" ]; then $(TOOLKIT_BIN) pulse; \
+	elif [ -f "ai_toolkit/bin/sync/project_pulse.py" ]; then python3 ai_toolkit/bin/sync/project_pulse.py; \
+	elif [ -f "bin/sync/project_pulse.py" ]; then python3 bin/sync/project_pulse.py; \
+	else echo "❌ Toolkit pulse engine not found. Run 'make toolkit-add' first."; fi
+
+# --- Fonts Management & Provisioning ---------------------------------------
+fonts:
+	@if [ -x "$(TOOLKIT_BIN)" ]; then $(TOOLKIT_BIN) fonts --list; \
+	elif [ -f "ai_toolkit/bin/setup/setup_fonts.py" ]; then python3 ai_toolkit/bin/setup/setup_fonts.py --list; \
+	elif [ -f "bin/setup/setup_fonts.py" ]; then python3 bin/setup/setup_fonts.py --list; \
+	else echo "❌ Toolkit fonts runner not found."; fi
+
+fonts-setup:
+	@test -n "$(FONTS)" || (echo 'Usage: make fonts-setup FONTS="cairo,inter"' >&2; exit 1)
+	@if [ -x "$(TOOLKIT_BIN)" ]; then $(TOOLKIT_BIN) fonts --fonts "$(FONTS)"; \
+	elif [ -f "ai_toolkit/bin/setup/setup_fonts.py" ]; then python3 ai_toolkit/bin/setup/setup_fonts.py --fonts "$(FONTS)"; \
+	elif [ -f "bin/setup/setup_fonts.py" ]; then python3 bin/setup/setup_fonts.py --fonts "$(FONTS)"; \
+	else echo "❌ Toolkit fonts runner not found."; fi
+
+font-custom:
+	@test -n "$(PATH)" || (echo 'Usage: make font-custom PATH="/path/to/fonts" NAME="SomarSans"' >&2; exit 1)
+	@if [ -x "$(TOOLKIT_BIN)" ]; then $(TOOLKIT_BIN) fonts --custom-font "$(PATH)" --name "$(NAME)"; \
+	elif [ -f "ai_toolkit/bin/setup/setup_fonts.py" ]; then python3 ai_toolkit/bin/setup/setup_fonts.py --custom-font "$(PATH)" --name "$(NAME)"; \
+	elif [ -f "bin/setup/setup_fonts.py" ]; then python3 bin/setup/setup_fonts.py --custom-font "$(PATH)" --name "$(NAME)"; \
+	else echo "❌ Toolkit fonts runner not found."; fi
+
 # --- Package Synchronization & Flavors Setup -------------------------------
 deps-sync:
 	@if [ -x "$(TOOLKIT_BIN)" ]; then $(TOOLKIT_BIN) deps sync; \
@@ -254,6 +283,10 @@ help:
 	@echo "  make analyze    - Run Flutter static analyzer"
 	@echo "  make format     - Format Dart code"
 	@echo "  make test       - Execute test suite"
+	@echo "  make pulse      - Audit project state, rotate plan to history, & sync memory"
+	@echo "  make fonts      - List available bundled fonts"
+	@echo "  make fonts-setup FONTS=\"cairo,inter\" - Provision bundled fonts directly"
+	@echo "  make font-custom PATH=\"...\" NAME=\"...\" - Provision a custom font & sync docs"
 	@echo "  make qa         - Run autonomous QA & Maestro verification suite"
 	@echo "  make qa-feature FEATURE=name - Run QA on specific feature"
 	@echo "  make qa-gen FEATURE=name     - Generate Maestro flow for feature"

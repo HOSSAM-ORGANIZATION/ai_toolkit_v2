@@ -21,6 +21,7 @@ Before taking any action in this repository, follow this exact sequence:
 | Task | Workflow / Rule |
 | :--- | :--- |
 | **Session Start / Resume** | [`workflows/session/bootstrap-session.md`](workflows/session/bootstrap-session.md) |
+| **Project Pulse & Living Memory Sync** | [`workflows/maintenance/project-pulse.md`](workflows/maintenance/project-pulse.md) |
 | **Initialize / Repair Project Profile** | [`bin/wizard/init_profile.py`](bin/wizard/init_profile.py) |
 | **Analyze Design & Navigation (Figma / Stitch)** | [`workflows/product-analysis/design-analysis.md`](workflows/product-analysis/design-analysis.md) |
 | **Ingest Tokens & Theme (Stitch / Figma)** | [`workflows/product-analysis/design-ingestion.md`](workflows/product-analysis/design-ingestion.md) |
