@@ -54,5 +54,19 @@ fi
 # 4. Ensure execution permissions
 chmod +x "$RESOLVED_TOOLKIT"/bin/* "$RESOLVED_TOOLKIT"/setup/*.sh 2>/dev/null || true
 
-# 5. Delegate command directly to master CLI
+# 5. One-Shot Upgrade & Sync Handler (Pulls submodule & updates host Makefile/wrapper)
+if [ "$1" = "pull" ] || [ "$1" = "upgrade" ]; then
+  echo "⬇️ Pulling latest toolkit updates in $RESOLVED_TOOLKIT..."
+  git -C "$RESOLVED_TOOLKIT" pull origin main
+  echo "⚙️ Synchronizing host project Makefile and rules..."
+  if [ -f "$RESOLVED_TOOLKIT/templates/root/Makefile.universal" ]; then
+    cp -f "$RESOLVED_TOOLKIT/templates/root/Makefile.universal" "$PROJECT_ROOT/Makefile"
+    echo "   ✅ Updated host Makefile with latest commands (pulse, fonts, etc.)"
+  fi
+  bash "$RESOLVED_TOOLKIT/setup/install.sh"
+  echo "🎉 Host project & Toolkit are fully synchronized!"
+  exit 0
+fi
+
+# 6. Delegate command directly to master CLI
 exec "$RESOLVED_TOOLKIT/bin/toolkit" "$@"

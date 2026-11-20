@@ -69,5 +69,18 @@ else
   echo "👉 Run 'make toolkit-init' or 'python3 ai_toolkit/bin/wizard/init_profile.py' to lock project identity."
 fi
 
+# 6. Synchronize Host Project Makefile & Toolkit Wrapper
+if [ "$HOST_DIR" != "$TOOLKIT_DIR" ]; then
+  if [ -f "$TOOLKIT_DIR/templates/root/Makefile.universal" ]; then
+    cp -f "$TOOLKIT_DIR/templates/root/Makefile.universal" "$HOST_DIR/Makefile"
+    echo "⚙️ Updated host Makefile with latest commands"
+  fi
+  if [ -f "$TOOLKIT_DIR/templates/root/toolkit" ]; then
+    cp -f "$TOOLKIT_DIR/templates/root/toolkit" "$HOST_DIR/toolkit"
+    chmod +x "$HOST_DIR/toolkit"
+    echo "⚙️ Updated host ./toolkit CLI wrapper"
+  fi
+fi
+
 echo ""
 echo "🎉 Universal AI Toolkit v2 successfully installed and synchronized!"

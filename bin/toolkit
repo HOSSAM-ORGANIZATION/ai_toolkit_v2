@@ -134,12 +134,12 @@ case "$cmd" in
     git submodule update --init --recursive
     echo "✅ Pinned submodule synchronized."
     ;;
-  pull)
+  pull|upgrade)
     echo "⬇️ Pulling latest toolkit changes from origin/main..."
-    git pull origin main
-    echo "⚙️ Synchronizing updated IDE skills and rules..."
+    git -C "$TOOLKIT_DIR" pull origin main
+    echo "⚙️ Synchronizing updated IDE skills, rules, and host Makefile..."
     bash "$TOOLKIT_DIR/setup/install.sh"
-    echo "✅ Toolkit updated and IDE rules synchronized successfully!"
+    echo "✅ Toolkit updated and host project synchronized successfully!"
     ;;
   push)
     msg="$1"

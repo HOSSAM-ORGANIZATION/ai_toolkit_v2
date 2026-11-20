@@ -249,9 +249,17 @@ toolkit-sync:
 	@if [ -x "$(TOOLKIT_BIN)" ]; then $(TOOLKIT_BIN) sync; \
 	else git submodule update --init --recursive -- $(TOOLKIT_DIR); fi
 
-toolkit-pull:
+toolkit-pull toolkit-upgrade:
 	@if [ -x "$(TOOLKIT_BIN)" ]; then $(TOOLKIT_BIN) pull; \
-	else cd $(TOOLKIT_DIR) && git pull origin main && cd .. && bash $(TOOLKIT_DIR)/setup/install.sh; fi
+	elif [ -d "$(TOOLKIT_DIR)" ]; then \
+		cd $(TOOLKIT_DIR) && git pull origin main && cd .. && \
+		cp -f $(TOOLKIT_DIR)/templates/root/Makefile.universal Makefile && \
+		cp -f $(TOOLKIT_DIR)/templates/root/toolkit toolkit 2>/dev/null || true && \
+		chmod +x toolkit 2>/dev/null || true && \
+		bash $(TOOLKIT_DIR)/setup/install.sh; \
+	else \
+		echo "❌ Toolkit not found in $(TOOLKIT_DIR). Run 'make toolkit-add' first."; \
+	fi
 
 toolkit-push:
 	@test -n "$(MSG)" || (echo 'Usage: make toolkit-push MSG="describe change"' >&2; exit 1)
