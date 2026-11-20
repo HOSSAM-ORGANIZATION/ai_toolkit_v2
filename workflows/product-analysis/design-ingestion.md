@@ -36,10 +36,12 @@ Parse the raw design data into five distinct token categories:
    - Scan font family, weights, font sizes, and line heights.
    - Run font matcher: `python3 bin/setup/setup_fonts.py --match "<FontName>"`
      - **Matched:** Auto-provisions TTF assets, registers in `pubspec.yaml`, and scaffolds `fonts.dart` and `text_styles.dart`:
-       `python3 bin/setup/setup_fonts.py --font <font_key>`
+       `python3 bin/setup/setup_fonts.py --fonts <font_key1,font_key2>`
      - **Not Matched:** Alert developer:
-       1. Map to bundled font (`cairo`, `tajawal`, `inter`, `public_sans`, `roboto`).
-       2. Place custom `.ttf` files in `assets/fonts/` and register in `pubspec.yaml`.
+       1. Map to bundled font (`cairo`, `tajawal`, `inter`, `somarsans`, `public_sans`, `roboto`).
+       2. Or import custom font permanently into toolkit library:
+          `python3 bin/setup/setup_fonts.py --import /path/to/font_folder --name "MyFont"`
+          (The font will be permanently saved to the toolkit and auto-provisioned).
    - Adhere strictly to the **Direct Sized Scale** (`light12`, `regular14`, `medium16`, `semiBold16`, `bold18`...) with `height: 1.4` for Arabic clipping prevention.
 3. **Spacing & Dimensions:**
    - Standard grid steps (e.g. 4, 8, 12, 16, 20, 24, 32, 48).

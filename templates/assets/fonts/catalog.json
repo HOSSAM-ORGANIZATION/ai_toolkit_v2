@@ -1,0 +1,182 @@
+{
+  "cairo": {
+    "family": "Cairo",
+    "dir": "cairo",
+    "primary_language": "ar/en",
+    "default_height": 1.4,
+    "weights": [
+      {
+        "asset": "Cairo-Light.ttf",
+        "weight": 300
+      },
+      {
+        "asset": "Cairo-Regular.ttf",
+        "weight": 400
+      },
+      {
+        "asset": "Cairo-Medium.ttf",
+        "weight": 500
+      },
+      {
+        "asset": "Cairo-SemiBold.ttf",
+        "weight": 600
+      },
+      {
+        "asset": "Cairo-Bold.ttf",
+        "weight": 700
+      },
+      {
+        "asset": "Cairo-Black.ttf",
+        "weight": 900
+      }
+    ]
+  },
+  "inter": {
+    "family": "Inter",
+    "dir": "inter",
+    "primary_language": "en",
+    "default_height": 1.3,
+    "weights": [
+      {
+        "asset": "Inter_18pt-Light.ttf",
+        "weight": 300
+      },
+      {
+        "asset": "Inter_18pt-Regular.ttf",
+        "weight": 400
+      },
+      {
+        "asset": "Inter_18pt-Medium.ttf",
+        "weight": 500
+      },
+      {
+        "asset": "Inter_18pt-SemiBold.ttf",
+        "weight": 600
+      },
+      {
+        "asset": "Inter_18pt-Bold.ttf",
+        "weight": 700
+      }
+    ]
+  },
+  "public_sans": {
+    "family": "PublicSans",
+    "dir": "public_sans",
+    "primary_language": "en",
+    "default_height": 1.3,
+    "weights": [
+      {
+        "asset": "PublicSans-Light.ttf",
+        "weight": 300
+      },
+      {
+        "asset": "PublicSans-Regular.ttf",
+        "weight": 400
+      },
+      {
+        "asset": "PublicSans-Medium.ttf",
+        "weight": 500
+      },
+      {
+        "asset": "PublicSans-SemiBold.ttf",
+        "weight": 600
+      },
+      {
+        "asset": "PublicSans-Bold.ttf",
+        "weight": 700
+      }
+    ]
+  },
+  "roboto": {
+    "family": "Roboto",
+    "dir": "roboto",
+    "primary_language": "en",
+    "default_height": 1.3,
+    "weights": [
+      {
+        "asset": "Roboto-Light.ttf",
+        "weight": 300
+      },
+      {
+        "asset": "Roboto-Regular.ttf",
+        "weight": 400
+      },
+      {
+        "asset": "Roboto-Medium.ttf",
+        "weight": 500
+      },
+      {
+        "asset": "Roboto-SemiBold.ttf",
+        "weight": 600
+      },
+      {
+        "asset": "Roboto-Bold.ttf",
+        "weight": 700
+      }
+    ]
+  },
+  "tajawal": {
+    "family": "Tajawal",
+    "dir": "tajawal",
+    "primary_language": "ar/en",
+    "default_height": 1.4,
+    "weights": [
+      {
+        "asset": "Tajawal-Light.ttf",
+        "weight": 300
+      },
+      {
+        "asset": "Tajawal-Regular.ttf",
+        "weight": 400
+      },
+      {
+        "asset": "Tajawal-Medium.ttf",
+        "weight": 500
+      },
+      {
+        "asset": "Tajawal-Bold.ttf",
+        "weight": 700
+      }
+    ]
+  },
+  "somarsans": {
+    "family": "SomarSans",
+    "dir": "somarsans",
+    "primary_language": "ar/en",
+    "default_height": 1.4,
+    "weights": [
+      {
+        "asset": "SomarSans-Bold.ttf",
+        "weight": 700
+      },
+      {
+        "asset": "SomarSans-Light.ttf",
+        "weight": 300
+      },
+      {
+        "asset": "SomarSans-Medium.ttf",
+        "weight": 500
+      },
+      {
+        "asset": "SomarSans-Regular.ttf",
+        "weight": 400
+      },
+      {
+        "asset": "SomarSans-SemiBold.ttf",
+        "weight": 600
+      }
+    ]
+  },
+  "riyal": {
+    "family": "Riyal",
+    "dir": "riyal",
+    "primary_language": "ar",
+    "default_height": 1.4,
+    "weights": [
+      {
+        "asset": "riyal.ttf",
+        "weight": 400
+      }
+    ]
+  }
+}
