@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
 Universal AI Toolkit v2 — Automated Font Provisioner & Typography Engine
-Provisions bundled fonts to Flutter projects, supports multi-font selection (e.g. Arabic + English + Currency),
-configures pubspec.yaml fonts section directly in <project_root>/assets/fonts/,
-and supports importing NEW custom fonts directly into the toolkit's persistent catalog.
+Provisions fonts (bundled or custom) directly into Flutter projects:
+- Copies TTF/OTF directly to <project_root>/assets/fonts/
+- Safely configures pubspec.yaml fonts section
+- Scaffolds AppFonts and TextStyles with the direct sized scale
+- Automatically updates Project Memory & Living Docs (ai_docs/memory.md, conventions.md, project_profile.yaml, README.md)
 Uses Python Standard Library ONLY (zero pip dependencies).
 """
 
@@ -15,7 +17,7 @@ import shutil
 import argparse
 from pathlib import Path
 
-# Weight detection pattern for imported fonts
+# Weight detection pattern for custom imported fonts
 WEIGHT_PATTERNS = [
     (r"(?i)(thin|hairline|w100|100)", 100),
     (r"(?i)(extralight|ultra_?light|w200|200)", 200),
@@ -29,7 +31,6 @@ WEIGHT_PATTERNS = [
 ]
 
 def find_toolkit_root():
-    """Finds the root directory of the ai_toolkit containing templates/."""
     current = Path(__file__).resolve().parent
     while current != current.parent:
         if (current / "templates" / "assets" / "fonts").exists():
@@ -53,17 +54,7 @@ def load_catalog():
             print(f"⚠️ Warning: Failed to parse catalog.json: {e}")
     return {}
 
-def save_catalog(catalog: dict):
-    cat_path = get_catalog_path()
-    if not cat_path:
-        print("❌ Error: Could not determine catalog path.")
-        return False
-    with open(cat_path, "w", encoding="utf-8") as f:
-        json.dump(catalog, f, indent=2, ensure_ascii=False)
-    return True
-
 def normalize_font_name(name: str, catalog: dict):
-    """Normalizes noisy font names from Figma/Stitch (e.g. 'Cairo-Bold' -> 'cairo')."""
     if not name:
         return ""
     clean = re.sub(r"[-_](bold|medium|regular|light|semibold|black|thin|italic)", "", name, flags=re.IGNORECASE)
@@ -79,71 +70,17 @@ def detect_weight_from_filename(filename: str) -> int:
     for pattern, weight in WEIGHT_PATTERNS:
         if re.search(pattern, stem):
             return weight
-    return 400  # Default to regular if indeterminate
+    return 400
 
-def import_custom_font(source_path: Path, family_name: str = None, primary_lang: str = "ar/en"):
-    """Imports a local folder or font file into the toolkit's persistent font library."""
-    toolkit_root = find_toolkit_root()
-    if not toolkit_root:
-        print("❌ Error: Could not find toolkit root.")
-        sys.exit(1)
+def resolve_project_root(target_dir: Path) -> Path:
+    curr = target_dir.resolve()
+    while curr != curr.parent:
+        if (curr / "pubspec.yaml").exists() or (curr / "project_profile.yaml").exists():
+            return curr
+        curr = curr.parent
+    return target_dir.resolve()
 
-    catalog = load_catalog()
-
-    if not source_path.exists():
-        print(f"❌ Error: Source font path not found: {source_path}")
-        sys.exit(1)
-
-    # Gather font files
-    if source_path.is_file():
-        font_files = [source_path]
-        default_name = source_path.stem
-    else:
-        font_files = list(source_path.glob("*.ttf")) + list(source_path.glob("*.otf"))
-        default_name = source_path.name
-
-    if not font_files:
-        print(f"❌ Error: No .ttf or .otf files found in {source_path}")
-        sys.exit(1)
-
-    family = family_name.strip() if family_name else default_name.replace("-", " ").title().replace(" ", "")
-    slug = re.sub(r"[^a-zA-Z0-9_]", "", family.lower().replace(" ", "_"))
-
-    dest_dir = toolkit_root / "templates" / "assets" / "fonts" / slug
-    dest_dir.mkdir(parents=True, exist_ok=True)
-
-    weights_list = []
-    seen_weights = set()
-
-    print(f"\n📥 Importing font '{family}' into toolkit catalog ({dest_dir})...")
-    for f in sorted(font_files):
-        w_val = detect_weight_from_filename(f.name)
-        # Avoid duplicate weights collision
-        if w_val in seen_weights:
-            w_val = min(900, w_val + 50)
-        seen_weights.add(w_val)
-
-        shutil.copy2(f, dest_dir / f.name)
-        weights_list.append({"asset": f.name, "weight": w_val})
-        print(f"  • {f.name} -> weight: {w_val}")
-
-    default_height = 1.4 if ("ar" in primary_lang.lower()) else 1.3
-
-    catalog[slug] = {
-        "family": family,
-        "dir": slug,
-        "primary_language": primary_lang,
-        "default_height": default_height,
-        "weights": weights_list,
-    }
-
-    if save_catalog(catalog):
-        print(f"\n🎉 Successfully saved '{family}' (key: '{slug}') to toolkit's font library!")
-        print(f"Now you can use: python3 bin/setup/setup_fonts.py --fonts {slug} anywhere!\n")
-    else:
-        print("❌ Failed to update catalog.json")
-
-def load_simple_profile(profile_path):
+def load_simple_profile(profile_path: Path):
     data = {}
     if not profile_path.exists():
         return data
@@ -159,9 +96,8 @@ def load_simple_profile(profile_path):
                 data[k] = v
     return data
 
-def inject_pubspec_font(pubspec_path: Path, font_info: dict, dest_subpath: str):
+def inject_pubspec_font(pubspec_path: Path, family: str, weights_list: list, dest_subpath: str):
     content = pubspec_path.read_text(encoding="utf-8")
-    family = font_info["family"]
 
     if re.search(rf"-\s+family:\s+{re.escape(family)}\b", content):
         print(f"  ℹ️ Font '{family}' already registered in pubspec.yaml.")
@@ -171,7 +107,7 @@ def inject_pubspec_font(pubspec_path: Path, font_info: dict, dest_subpath: str):
         f"    - family: {family}",
         "      fonts:",
     ]
-    for w in font_info["weights"]:
+    for w in weights_list:
         asset_file = w["asset"]
         weight_val = w["weight"]
         font_lines.append(f"        - asset: {dest_subpath}/{asset_file}")
@@ -269,39 +205,80 @@ abstract final class TextStyles {{
     dest_path.write_text(code, encoding="utf-8")
     print(f"  ✅ Scaffolding TextStyles (direct scale) -> {dest_path}")
 
-def provision_fonts(font_keys: list, target_dir: Path, main_key: str = None):
+def update_project_docs(target_dir: Path, primary_family: str, secondary_family: str = None):
+    """Updates project living memory, conventions, project_profile.yaml, and README.md."""
+    # 1. Update project_profile.yaml
+    profile_path = target_dir / "project_profile.yaml"
+    if profile_path.exists():
+        text = profile_path.read_text(encoding="utf-8")
+        if "primary_font:" in text:
+            text = re.sub(r'primary_font:\s*["\']?[^"\n\r]+["\']?', f'primary_font: "{primary_family}"', text)
+        elif "design_system:" in text:
+            text = re.sub(r"(design_system:)", rf'\1\n  primary_font: "{primary_family}"', text, count=1)
+        profile_path.write_text(text, encoding="utf-8")
+        print(f"  📝 Updated project_profile.yaml (primary_font: {primary_family})")
+
+    # 2. Update ai_docs/memory.md
+    memory_path = target_dir / "ai_docs" / "memory.md"
+    if memory_path.exists():
+        text = memory_path.read_text(encoding="utf-8")
+        font_row = f"| **Primary Font** | `{primary_family}` (Direct scale, assets/fonts/) |"
+        if "| **Primary Font** |" in text:
+            text = re.sub(r"\|\s*\*\*Primary Font\*\*.*\|", font_row, text)
+        elif "## 1. Quick Technical Constraints" in text:
+            text = re.sub(r"(\|\s*\*\*Testing Gate\*\*.*\|)", rf"\1\n{font_row}", text, count=1)
+        memory_path.write_text(text, encoding="utf-8")
+        print(f"  🧠 Updated ai_docs/memory.md with font technical constraint")
+
+    # 3. Update ai_docs/conventions.md
+    conv_path = target_dir / "ai_docs" / "conventions.md"
+    if conv_path.exists():
+        text = conv_path.read_text(encoding="utf-8")
+        if "Typography:" in text:
+            text = re.sub(r"- \*\*Typography:\*\*.*", f"- **Typography:** `TextStyles` direct scale using `{primary_family}` (`assets/fonts/`)", text)
+            conv_path.write_text(text, encoding="utf-8")
+            print(f"  📐 Updated ai_docs/conventions.md typography conventions")
+
+    # 4. Update DESIGN_SYSTEM.md if exists
+    ds_path = target_dir / "ai_specs" / "design" / "DESIGN_SYSTEM.md"
+    if ds_path.exists():
+        text = ds_path.read_text(encoding="utf-8")
+        if "## Typography" in text and primary_family not in text:
+            text = re.sub(r"(## Typography)", rf"\1\n- Primary Font Family: {primary_family} (Direct Scale)\n", text, count=1)
+            ds_path.write_text(text, encoding="utf-8")
+            print(f"  🎨 Updated ai_specs/design/DESIGN_SYSTEM.md")
+
+    # 5. Update README.md if contains Typography section
+    readme_path = target_dir / "README.md"
+    if readme_path.exists():
+        text = readme_path.read_text(encoding="utf-8")
+        if "### Typography" in text or "## Typography" in text:
+            text = re.sub(r"(##+ Typography[^\n]*\n)", rf"\1- Font: **{primary_family}** (configured in `pubspec.yaml` & `AppFonts`)\n", text, count=1)
+            readme_path.write_text(text, encoding="utf-8")
+            print(f"  📖 Updated README.md typography reference")
+
+def provision_bundled_fonts(font_keys: list, target_dir: Path, main_key: str = None):
     catalog = load_catalog()
     toolkit_root = find_toolkit_root()
     if not toolkit_root:
         print("❌ Error: Could not locate ai_toolkit root containing templates/assets/fonts/.")
         sys.exit(1)
 
-    # Validate keys
+    target_dir = resolve_project_root(target_dir)
+
     resolved_info = []
     for k in font_keys:
         k_clean = k.strip().lower()
         if k_clean not in catalog:
             print(f"❌ Error: Font '{k_clean}' not found in toolkit catalog.")
             print(f"Available fonts: {list(catalog.keys())}")
-            print(f"💡 You can import it using: python3 bin/setup/setup_fonts.py --import /path/to/font_dir --name '{k_clean.title()}'")
+            print(f"💡 To supply a custom font directly to this project, use:\n   python3 bin/setup/setup_fonts.py --custom-font /path/to/fonts_folder --name '{k_clean.title()}' --target {target_dir}")
             sys.exit(1)
         resolved_info.append(catalog[k_clean])
 
-    # Resolve target project root
-    curr = target_dir
-    resolved_root = target_dir
-    while curr != curr.parent:
-        if (curr / "pubspec.yaml").exists() or (curr / "project_profile.yaml").exists():
-            resolved_root = curr
-            break
-        curr = curr.parent
-    target_dir = resolved_root
-
-    # Destination: ALWAYS <project_root>/assets/fonts/
     dest_subpath = "assets/fonts"
     dest_font_dir = target_dir / dest_subpath
     dest_font_dir.mkdir(parents=True, exist_ok=True)
-
     pubspec_path = target_dir / "pubspec.yaml"
 
     primary_info = resolved_info[0]
@@ -314,7 +291,7 @@ def provision_fonts(font_keys: list, target_dir: Path, main_key: str = None):
     secondary_info = resolved_info[1] if len(resolved_info) > 1 else None
     extra_families = [info["family"] for info in resolved_info[2:]] if len(resolved_info) > 2 else None
 
-    print(f"\n📦 Provisioning fonts to {dest_font_dir}...")
+    print(f"\n📦 Provisioning bundled fonts to {dest_font_dir}...")
     for info in resolved_info:
         src_font_dir = toolkit_root / "templates" / "assets" / "fonts" / info["dir"]
         for w in info["weights"]:
@@ -326,7 +303,7 @@ def provision_fonts(font_keys: list, target_dir: Path, main_key: str = None):
                 print(f"  ⚠️ Warning: {f_name} not found in template source.")
 
         if pubspec_path.exists():
-            inject_pubspec_font(pubspec_path, info, dest_subpath)
+            inject_pubspec_font(pubspec_path, info["family"], info["weights"], dest_subpath)
 
     profile = load_simple_profile(target_dir / "project_profile.yaml")
     tokens_base = target_dir / profile.get("tokens_path", "lib/core/configs/values")
@@ -338,33 +315,91 @@ def provision_fonts(font_keys: list, target_dir: Path, main_key: str = None):
         extra_families,
     )
     scaffold_text_styles_dart(tokens_base / "text_styles.dart", primary_info.get("default_height", 1.4))
+    update_project_docs(target_dir, primary_info["family"], secondary_info["family"] if secondary_info else None)
 
-    print(f"\n🎉 Successfully provisioned {[info['family'] for info in resolved_info]}!\n")
+    print(f"\n🎉 Successfully provisioned {[info['family'] for info in resolved_info]} and updated project memory!\n")
+
+def provision_custom_font(source_path: Path, target_dir: Path, family_name: str = None, lang: str = "ar/en"):
+    """
+    Directly adds a custom font to the TARGET PROJECT:
+    - Copies TTF/OTF to <project_root>/assets/fonts/
+    - Injects into pubspec.yaml
+    - Scaffolds AppFonts and TextStyles
+    - Updates ai_docs/memory.md, conventions.md, project_profile.yaml, and README.md
+    Does NOT store or pollute the global toolkit repository.
+    """
+    target_dir = resolve_project_root(target_dir)
+
+    if not source_path.exists():
+        print(f"❌ Error: Custom font path not found: {source_path}")
+        sys.exit(1)
+
+    if source_path.is_file():
+        font_files = [source_path]
+        default_name = source_path.stem
+    else:
+        font_files = list(source_path.glob("*.ttf")) + list(source_path.glob("*.otf"))
+        default_name = source_path.name
+
+    if not font_files:
+        print(f"❌ Error: No .ttf or .otf files found in {source_path}")
+        sys.exit(1)
+
+    family = family_name.strip() if family_name else default_name.replace("-", " ").title().replace(" ", "")
+
+    dest_subpath = "assets/fonts"
+    dest_font_dir = target_dir / dest_subpath
+    dest_font_dir.mkdir(parents=True, exist_ok=True)
+
+    weights_list = []
+    seen_weights = set()
+
+    print(f"\n📦 Adding custom font '{family}' to project ({dest_font_dir})...")
+    for f in sorted(font_files):
+        w_val = detect_weight_from_filename(f.name)
+        if w_val in seen_weights:
+            w_val = min(900, w_val + 50)
+        seen_weights.add(w_val)
+
+        shutil.copy2(f, dest_font_dir / f.name)
+        weights_list.append({"asset": f.name, "weight": w_val})
+        print(f"  • {f.name} (weight: {w_val}) -> assets/fonts/{f.name}")
+
+    pubspec_path = target_dir / "pubspec.yaml"
+    if pubspec_path.exists():
+        inject_pubspec_font(pubspec_path, family, weights_list, dest_subpath)
+
+    profile = load_simple_profile(target_dir / "project_profile.yaml")
+    tokens_base = target_dir / profile.get("tokens_path", "lib/core/configs/values")
+
+    default_height = 1.4 if ("ar" in lang.lower()) else 1.3
+    scaffold_fonts_dart(tokens_base / "fonts.dart", family)
+    scaffold_text_styles_dart(tokens_base / "text_styles.dart", default_height)
+
+    # Update project docs and memory
+    update_project_docs(target_dir, family)
+
+    print(f"\n🎉 Custom font '{family}' successfully configured in project and synced with Living Memory!\n")
 
 def main():
-    parser = argparse.ArgumentParser(description="Universal AI Toolkit v2 — Font Provisioner & Library")
-    parser.add_argument("--fonts", "--font", help="Comma-separated fonts to install (e.g. cairo,inter,tajawal)")
-    parser.add_argument("--main-font", help="Primary font if multiple are selected (defaults to the first)")
+    parser = argparse.ArgumentParser(description="Universal AI Toolkit v2 — Project Font Provisioner & Memory Engine")
+    parser.add_argument("--fonts", "--font", help="Comma-separated bundled fonts (e.g. cairo,inter,tajawal)")
+    parser.add_argument("--main-font", help="Primary font if multiple bundled are selected")
+    parser.add_argument("--custom-font", dest="custom_font_path", help="Path to local folder/file of a custom font to add to the PROJECT")
+    parser.add_argument("--name", help="Display/Family name for the custom font (e.g. 'SomarSans')")
+    parser.add_argument("--lang", default="ar/en", help="Language for custom font (ar/en, en, etc.)")
     parser.add_argument("--match", help="Match a raw font name from design against saved fonts catalog")
-    parser.add_argument("--list", action="store_true", help="List all available fonts in toolkit catalog")
-    parser.add_argument("--import", dest="import_path", help="Path to a local font folder or TTF file to register in toolkit")
-    parser.add_argument("--name", help="Display/Family name when importing (e.g. 'SomarSans')")
-    parser.add_argument("--lang", default="ar/en", help="Primary language when importing (ar/en, en, etc.)")
-    parser.add_argument("--target", default=".", help="Target app directory (default: current)")
+    parser.add_argument("--list", action="store_true", help="List all bundled fonts in toolkit")
+    parser.add_argument("--target", default=".", help="Target Flutter project directory (default: current)")
 
     args = parser.parse_args()
     catalog = load_catalog()
 
     if args.list:
-        print("\n🔤 Saved Fonts Library in Toolkit:")
+        print("\n🔤 Bundled Starter Fonts in Toolkit:")
         for k, v in catalog.items():
             print(f"  • {k.ljust(14)} -> {v['family'].ljust(14)} ({v.get('primary_language', 'any')}) [{len(v.get('weights', []))} weights]")
         print()
-        return
-
-    if args.import_path:
-        src = Path(args.import_path).resolve()
-        import_custom_font(src, family_name=args.name, primary_lang=args.lang)
         return
 
     if args.match:
@@ -375,13 +410,19 @@ def main():
             print(f"NO_MATCH:{args.match}")
         return
 
-    font_arg = args.fonts
-    if font_arg:
-        keys = [k.strip() for k in font_arg.split(",") if k.strip()]
-        target_path = Path(args.target).resolve()
-        provision_fonts(keys, target_path, main_key=args.main_font)
-    else:
-        parser.print_help()
+    target_path = Path(args.target).resolve()
+
+    if args.custom_font_path:
+        src = Path(args.custom_font_path).resolve()
+        provision_custom_font(src, target_path, family_name=args.name, lang=args.lang)
+        return
+
+    if args.fonts:
+        keys = [k.strip() for k in args.fonts.split(",") if k.strip()]
+        provision_bundled_fonts(keys, target_path, main_key=args.main_font)
+        return
+
+    parser.print_help()
 
 if __name__ == "__main__":
     main()
