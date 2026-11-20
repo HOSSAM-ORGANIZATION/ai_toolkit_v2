@@ -2,6 +2,7 @@
 
 > Supports Google Stitch & Figma via either MCP Server or Local Folder.
 > Extracts colors, typography, spacing, radii, and component themes into `DESIGN_SYSTEM.md` and generates Flutter token code.
+> **Synergy:** Triggered directly or orchestrated by [`design-analysis.md`](design-analysis.md) (Step 10).
 
 ---
 
@@ -31,8 +32,15 @@ Parse the raw design data into five distinct token categories:
    - Primary, Secondary, Background, Surface, Card Background.
    - Semantic Status: Success, Warning, Error, Info.
    - Text Colors: Primary Text, Subtitle Text, Disabled Text.
-2. **Typography Scale:**
-   - Display, Headline, Title, Body, Label (font families, weights, font sizes, line heights).
+2. **Typography Scale & Font Matching:**
+   - Scan font family, weights, font sizes, and line heights.
+   - Run font matcher: `python3 bin/setup/setup_fonts.py --match "<FontName>"`
+     - **Matched:** Auto-provisions TTF assets, registers in `pubspec.yaml`, and scaffolds `fonts.dart` and `text_styles.dart`:
+       `python3 bin/setup/setup_fonts.py --font <font_key>`
+     - **Not Matched:** Alert developer:
+       1. Map to bundled font (`cairo`, `tajawal`, `inter`, `public_sans`, `roboto`).
+       2. Place custom `.ttf` files in `assets/fonts/` and register in `pubspec.yaml`.
+   - Adhere strictly to the **Direct Sized Scale** (`light12`, `regular14`, `medium16`, `semiBold16`, `bold18`...) with `height: 1.4` for Arabic clipping prevention.
 3. **Spacing & Dimensions:**
    - Standard grid steps (e.g. 4, 8, 12, 16, 20, 24, 32, 48).
 4. **Border Radii & Shapes:**

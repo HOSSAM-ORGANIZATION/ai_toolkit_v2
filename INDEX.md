@@ -22,7 +22,8 @@ Before taking any action in this repository, follow this exact sequence:
 | :--- | :--- |
 | **Session Start / Resume** | [`workflows/session/bootstrap-session.md`](workflows/session/bootstrap-session.md) |
 | **Initialize / Repair Project Profile** | [`bin/wizard/init_profile.py`](bin/wizard/init_profile.py) |
-| **Ingest Design (Stitch / Figma)** | [`workflows/product-analysis/design-ingestion.md`](workflows/product-analysis/design-ingestion.md) |
+| **Analyze Design & Navigation (Figma / Stitch)** | [`workflows/product-analysis/design-analysis.md`](workflows/product-analysis/design-analysis.md) |
+| **Ingest Tokens & Theme (Stitch / Figma)** | [`workflows/product-analysis/design-ingestion.md`](workflows/product-analysis/design-ingestion.md) |
 | **Plan a New Feature** | [`workflows/feature-delivery/make-plan.md`](workflows/feature-delivery/make-plan.md) |
 | **Evaluate Screen States & Scenarios** | [`workflows/feature-delivery/screen-states-protocol.md`](workflows/feature-delivery/screen-states-protocol.md) |
 | **Implement a Single Phase** | [`workflows/feature-delivery/implement-phase.md`](workflows/feature-delivery/implement-phase.md) |
@@ -35,6 +36,7 @@ Before taking any action in this repository, follow this exact sequence:
 | **Sync Dependencies (pub.dev)** | [`bin/deps/sync_packages.py`](bin/deps/sync_packages.py) |
 | **Setup Flutter Flavors** | [`bin/flavors/setup_flavors.py`](bin/flavors/setup_flavors.py) |
 | **Configure Project Capabilities** | [`bin/setup/`](bin/setup/) |
+| **Setup & Provision Fonts (Cairo, Tajawal, Inter...)** | [`bin/setup/setup_fonts.py`](bin/setup/setup_fonts.py) |
 | **Split Large Plan Files (< 8KB)** | [`bin/plan-splitter`](bin/plan-splitter) |
 | **Sync Localization Keys (ARB/JSON)** | [`bin/l10n-sync.py`](bin/l10n-sync.py) |
 | **Provision Cloud & App Stores (Firebase, iOS, Android)** | [`bin/setup/setup_cloud.py`](bin/setup/setup_cloud.py) |
