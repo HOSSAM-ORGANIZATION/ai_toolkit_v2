@@ -34,6 +34,7 @@ PACKAGE_MAP = {
     },
     "dependency_injection": {
         "injectable_get_it": (["get_it", "injectable"], ["injectable_generator", "build_runner"]),
+        "get_it": (["get_it"], []),
         "riverpod": ([], []),
         "none_manual": ([], [])
     },
@@ -47,6 +48,13 @@ PACKAGE_MAP = {
         "arb_gen_l10n": (["intl"], []),
         "easy_localization_json": (["easy_localization"], []),
         "slang": (["slang", "slang_flutter"], ["slang_build_runner"]),
+        "none": ([], [])
+    },
+    "storage": {
+        "secure_and_prefs": (["shared_preferences", "flutter_secure_storage"], []),
+        "shared_preferences": (["shared_preferences"], []),
+        "flutter_secure_storage": (["flutter_secure_storage"], []),
+        "hive": (["hive", "hive_flutter"], ["hive_generator", "build_runner"]),
         "none": ([], [])
     }
 }

@@ -128,7 +128,7 @@ toolkit init --preset enterprise_clean_bloc
 | :--- | :--- | :--- | :--- | :--- |
 | `enterprise_clean_bloc` | Flutter BLoC | Clean Architecture (Domain/Data/Presentation) | Dio + Retrofit | ThemeExtension + AppColors |
 | `modern_modular_riverpod` | Riverpod 2.x (Notifier) | Feature-First / Modular | Dio | ThemeData / ColorScheme |
-| `lean_mvp` | Provider / ValueNotifier | Simple Layer-First (UI/Services) | Http / Dio | Global Static Tokens |
+| `lean_mvp` | Provider | Feature-First (UI/Data) | Dio (Interceptors) + GetIt | Global Static Tokens / Theme |
 | `moltaqa` | BLoC / Cubit | Enterprise Multi-Package Monorepo | Dio + Custom Interceptors | Dedicated Design System Package |
 
 ---

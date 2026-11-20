@@ -1,28 +1,32 @@
-# Preset: Lean MVP / Fast Prototyping
-# Best for: Quick MVPs, single-developer projects, hackathons
+# Preset: Flutter Official Lean MVP
+# Best for: Fast MVP delivery, robust foundation following Flutter Docs recommendations
+# State: Provider | Routing: GoRouter | Network: Dio | DI: GetIt | L10n: Flutter ARB | Storage: Secure+Prefs
 
 project_name: "mvp_app"
 project_type: "single_app"
 flavors: []
-architecture: "layer_first"
+architecture: "feature_first"
 state_management: "provider"
-network_client: "http"
-dependency_injection: "none_manual"
-navigation: "navigator_2"
+network_client: "dio"
+dependency_injection: "get_it"
+navigation: "go_router"
 localization:
-  engine: "easy_localization_json"
-  default_locale: "en"
+  engine: "arb_gen_l10n"
+  default_locale: "ar"
   supported_locales:
+    - "ar"
     - "en"
-directionality: "ltr_first"
+directionality: "rtl_first"
+storage: "secure_and_prefs"
+data_modeling: "manual"
 design_system:
-  tokens_path: "lib/theme"
+  tokens_path: "lib/core/theme"
   source: "manual"
   strict_mode: false
 testing_gate: "mvp_disabled"
 secrets_management:
-  enabled: false
-  strategy: "none"
+  enabled: true
+  strategy: "dart_define"
 living_documentation:
   living_readme: true
   feature_readmes: false

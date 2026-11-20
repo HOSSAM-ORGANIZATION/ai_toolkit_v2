@@ -16,7 +16,7 @@ from pathlib import Path
 PRESETS = {
     "1": ("enterprise_clean_bloc", "Enterprise Clean Arch + BLoC + Dio + GetIt + ARB (RTL/LTR)"),
     "2": ("modern_modular_riverpod", "Modern Modular + Riverpod + Retrofit + GoRouter + Slang"),
-    "3": ("lean_mvp", "Lean MVP + Provider/Signals + Http + Easy Localization"),
+    "3": ("lean_mvp", "Flutter Official Lean MVP + Provider + GoRouter + Dio + GetIt + ARB + SecureStorage"),
     "4": ("moltaqa", "Moltaqa Enterprise (Single/Multi-Flavor) + BLoC + Dio + Injectable + ARB RTL")
 }
 
